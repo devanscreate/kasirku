@@ -1,0 +1,354 @@
+/* ===== Kasirku - Tema Biru & Putih Estetik, Adem di Mata & Colorfull untuk Persona 40 Tahun ===== */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700;800&display=swap');
+
+:root {
+  /* Latar Belakang & Panel (Biru Es Lembut & Putih Bersih - Tidak Silau, Sangat Nyaman di Mata) */
+  --warna-latar: #f0f4f9;          /* Biru es lembut penyejuk mata */
+  --warna-latar-sub: #e2eaf4;      /* Latar sekunder */
+  --warna-kartu: #ffffff;          /* Putih bersih elegan */
+  --warna-kartu-atas: #f8fafc;     /* Latar header/baris kartu */
+  --warna-kartu-hover: #eff6ff;    /* Highlight biru muda saat disentuh/diarahkan */
+  --warna-batas: #cbd5e1;          /* Border tegas terlihat jelas */
+  --warna-batas-terang: #94a3b8;   /* Border kontras tinggi */
+  --warna-batas-fokus: #2563eb;    /* Border saat input aktif */
+  
+  /* Keterbacaan Teks Maksimal (Navy Gelap & Slate - Kontras Tinggi, Huruf Sangat Mudah Dibaca) */
+  --warna-teks-utama: #0f172a;     /* Navy pekat - sangat jelas dan tajam */
+  --warna-teks-redup: #334155;     /* Slate gelap untuk teks sekunder */
+  --warna-teks-pudar: #64748b;     /* Label pendukung */
+
+  /* Fitur Colorfull & Intuitif (Setiap Tombol Fungsi Memiliki Warna Khasnya Sendiri) */
+  --warna-primer: #1d4ed8;         /* Biru Laut Dalam - Tombol Aksi Utama */
+  --warna-primer-hover: #1e40af;
+  --warna-primer-soft: #eff6ff;
+  --warna-primer-border: #bfdbfe;
+
+  --warna-sukses: #059669;         /* Hijau Zamrud - Tombol Bayar / Selesai / Uang */
+  --warna-sukses-hover: #047857;
+  --warna-sukses-soft: #ecfdf5;
+  --warna-sukses-border: #a7f3d0;
+
+  --warna-peringatan: #d97706;     /* Oranye Amber - Diskon / Perhatian */
+  --warna-peringatan-soft: #fffbeb;
+  --warna-peringatan-border: #fde68a;
+
+  --warna-bahaya: #dc2626;         /* Merah Tegas - Batal / Hapus / Void */
+  --warna-bahaya-hover: #b91c1c;
+  --warna-bahaya-soft: #fef2f2;
+  --warna-bahaya-border: #fecaca;
+
+  --warna-info: #0284c7;           /* Biru Terang - QRIS & Info */
+  --warna-info-soft: #f0f9ff;
+  --warna-info-border: #bae6fd;
+
+  --warna-ungu: #7c3aed;           /* Ungu - Transfer & Retur */
+  --warna-ungu-soft: #f5f3ff;
+  --warna-ungu-border: #ddd6fe;
+
+  /* Kode Warna Pecahan Uang Rupiah Asli (Sangat Membantu Kasir Usia 40-an Menghitung) */
+  --uang-100rb: #be123c;           /* Merah khas Rp 100.000 */
+  --uang-50rb: #0369a1;            /* Biru khas Rp 50.000 */
+  --uang-20rb: #15803d;            /* Hijau khas Rp 20.000 */
+  --uang-10rb: #7e22ce;            /* Ungu khas Rp 10.000 */
+  --uang-5rb: #b45309;             /* Coklat khas Rp 5.000 */
+  --uang-pas: #059669;             /* Hijau Ceria [UANG PAS] */
+
+  --font-utama: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-angka: 'JetBrains Mono', monospace;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --bayangan-kartu: 0 4px 18px -2px rgba(30, 64, 175, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+  --bayangan-tombol: 0 3px 10px rgba(0, 0, 0, 0.12);
+  --transisi-halus: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-utama);
+  background-color: var(--warna-latar);
+  color: var(--warna-teks-utama);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-size: 15px;
+}
+
+/* Scrollbar Elegan & Nyaman */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--warna-latar);
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Tombol Berukuran Besar & Ramah Sentuh (Touch-Friendly untuk Usia 40-an) */
+.tombol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 20px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: var(--transisi-halus);
+  font-family: var(--font-utama);
+  user-select: none;
+  box-shadow: var(--bayangan-tombol);
+}
+.tombol:active {
+  transform: scale(0.97);
+}
+.tombol:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Tombol Aksi Warna-Warni Berkarakter */
+.tombol-primer {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+.tombol-primer:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1e40af, #1d4ed8);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
+}
+
+.tombol-sukses {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+.tombol-sukses:hover:not(:disabled) {
+  background: linear-gradient(135deg, #047857, #059669);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
+}
+
+.tombol-bahaya {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+}
+.tombol-bahaya:hover:not(:disabled) {
+  background: linear-gradient(135deg, #b91c1c, #dc2626);
+}
+
+.tombol-peringatan {
+  background: linear-gradient(135deg, #d97706, #f59e0b);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+}
+.tombol-peringatan:hover:not(:disabled) {
+  background: linear-gradient(135deg, #b45309, #d97706);
+}
+
+.tombol-sekunder {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: var(--warna-teks-utama);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.tombol-sekunder:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #1e40af;
+}
+
+.tombol-sm {
+  padding: 8px 14px;
+  font-size: 0.875rem;
+  border-radius: var(--radius-sm);
+}
+.tombol-lg {
+  padding: 16px 26px;
+  font-size: 1.15rem;
+  border-radius: var(--radius-lg);
+  font-weight: 800;
+}
+
+/* Input Form Jelas & Berkontras Tinggi */
+.input-teks, .input-pilihan {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 2px solid #cbd5e1;
+  background: #ffffff;
+  color: var(--warna-teks-utama);
+  font-family: var(--font-utama);
+  transition: var(--transisi-halus);
+  outline: none;
+}
+.input-teks::placeholder {
+  color: #94a3b8;
+  font-weight: 500;
+}
+.input-teks:focus, .input-pilihan:focus {
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+}
+
+/* Panel & Kartu Putih Elegan */
+.panel-kartu {
+  background: var(--warna-kartu);
+  border: 1px solid var(--warna-batas);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--bayangan-kartu);
+}
+
+/* Lencana Status / Badge */
+.lencana {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 0.825rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.lencana-online {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1.5px solid #10b981;
+}
+.lencana-offline {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1.5px solid #ef4444;
+}
+.lencana-peringatan {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1.5px solid #f59e0b;
+}
+.lencana-info {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1.5px solid #3b82f6;
+}
+
+/* Modal Overlay & Kotak Dialog */
+.latar-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: pudarMasuk 0.2s ease-out;
+}
+.kotak-modal {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+  animation: geserNaik 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--warna-teks-utama);
+}
+
+/* Banner Tips Ramah Usia 40 Tahun */
+.banner-panduan {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: #eff6ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: var(--radius-md);
+  color: #1e40af;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.banner-panduan .ikon-lampu {
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+@keyframes pudarMasuk {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes geserNaik {
+  from { transform: translateY(16px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* Utility Flex */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+.w-full { width: 100%; }
+.mt-2 { margin-top: 8px; }
+.mt-4 { margin-top: 16px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-4 { margin-bottom: 16px; }
+.tebal { font-weight: 800; }
+.teks-sukses { color: var(--warna-sukses); }
+.teks-bahaya { color: var(--warna-bahaya); }
+.teks-peringatan { color: var(--warna-peringatan); }
+.teks-primer { color: var(--warna-primer); }
+.teks-redup { color: var(--warna-teks-redup); }
+
+/* Gaya Cetak Struk Kasir Thermal (58mm / 80mm) */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #struk-cetak, #struk-cetak * {
+    visibility: visible;
+  }
+  #struk-cetak {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    color: #000000 !important;
+    background: #ffffff !important;
+    font-family: var(--font-angka);
+  }
+  @page {
+    margin: 2mm;
+    size: auto;
+  }
+}

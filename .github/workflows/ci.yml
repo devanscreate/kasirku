@@ -1,0 +1,57 @@
+name: Kasirku POS CI Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  backend-test:
+    name: Backend Test (FastAPI & Pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Pasang Dependensi Backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Jalankan Unit Test Pytest
+        run: |
+          pytest backend/tests
+
+  frontend-build:
+    name: Frontend PWA Build (Vue 3 & pnpm)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Pasang & Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Pasang Dependensi Frontend
+        working-directory: frontend
+        run: |
+          pnpm install --frozen-lockfile
+
+      - name: Build Aset Produksi PWA
+        working-directory: frontend
+        run: |
+          pnpm build
