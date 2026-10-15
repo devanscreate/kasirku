@@ -11,6 +11,7 @@ import ModalBukaShift from '../komponen/ModalBukaShift.vue'
 import ModalTutupShift from '../komponen/ModalTutupShift.vue'
 import ModalBayar from '../komponen/ModalBayar.vue'
 import ModalSukses from '../komponen/ModalSukses.vue'
+import ModalPreviewFoto from '../komponen/ModalPreviewFoto.vue'
 
 import { 
   Search, 
@@ -27,7 +28,10 @@ import {
   ShoppingBag,
   Info,
   Layers,
-  Check
+  Check,
+  ZoomIn,
+  ChevronRight,
+  ArrowLeft
 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
@@ -40,6 +44,25 @@ const teksPencarian = ref('')
 const kategoriDipilih = ref('semua')
 const daftarProduk = ref([])
 const sedangMuatKatalog = ref(false)
+
+// State Responsif Mobile / Tablet
+const tabAktifMobile = ref('katalog') // 'katalog' | 'keranjang'
+
+// State Modal Pratinjau Foto Produk
+const tampilModalPreview = ref(false)
+const produkPreview = ref(null)
+
+function bukaPreviewProduk(produk) {
+  produkPreview.value = produk
+  tampilModalPreview.value = true
+}
+
+function tambahItemDariPreview() {
+  if (produkPreview.value) {
+    tanganiKlikProduk(produkPreview.value)
+    tampilModalPreview.value = false
+  }
+}
 
 const tampilModalBukaShift = ref(false)
 const tampilModalTutupShift = ref(false)
@@ -261,8 +284,33 @@ function transaksiBaru() {
 
 <template>
   <div class="pos-layout">
+    <!-- TAB SWITCHER RESPONSIF KHUSUS TABLET & MOBILE (< 1024px) -->
+    <div class="tab-pos-responsif">
+      <button 
+        class="tab-item-responsif" 
+        :class="{ 'aktif': tabAktifMobile === 'katalog' }"
+        @click="tabAktifMobile = 'katalog'"
+      >
+        <span class="ikon-tab-nav">🛍️</span>
+        <span class="teks-tab-nav">Pilih Barang</span>
+        <span class="badge-tab-nav">{{ produkTerfilter.length }}</span>
+      </button>
+
+      <button 
+        class="tab-item-responsif" 
+        :class="{ 'aktif': tabAktifMobile === 'keranjang' }"
+        @click="tabAktifMobile = 'keranjang'"
+      >
+        <span class="ikon-tab-nav">🛒</span>
+        <span class="teks-tab-nav">Keranjang Kasir</span>
+        <span v-if="keranjangStore.totalKuantitas > 0" class="badge-tab-nav badge-hijau">
+          {{ keranjangStore.totalKuantitas }} item
+        </span>
+      </button>
+    </div>
+
     <!-- TAMPILAN UTAMA KASIR -->
-    <div class="grid-pos">
+    <div class="grid-pos" :class="`pos-view-${tabAktifMobile}`">
       <!-- KOLOM KIRI: KATALOG & SCAN BARCODE -->
       <section class="kolom-katalog">
         <!-- Banner Status Shift Kasir: Jelas & Logis -->
@@ -286,10 +334,31 @@ function transaksiBaru() {
           </button>
         </div>
 
-        <!-- Banner Panduan Ramah Usia 40 Tahun -->
-        <div class="banner-panduan">
-          <span class="ikon-lampu">💡</span>
-          <span><strong>Bantuan Cepat:</strong> Klik barang di bawah untuk memasukkan ke keranjang, atau gunakan barcode scanner (F2). Tekan tombol hijau <strong>"Bayar Sekarang"</strong> (F9) saat selesai.</span>
+        <!-- Panduan Visual 3 Langkah Orang Awam -->
+        <div class="panduan-tiga-langkah">
+          <div class="langkah-item">
+            <span class="nomor-langkah">1</span>
+            <div class="teks-langkah">
+              <strong class="judul-langkah">Pilih Barang</strong>
+              <span class="sub-langkah">Klik foto/nama barang</span>
+            </div>
+          </div>
+          <div class="panah-langkah">➔</div>
+          <div class="langkah-item">
+            <span class="nomor-langkah">2</span>
+            <div class="teks-langkah">
+              <strong class="judul-langkah">Cek Keranjang</strong>
+              <span class="sub-langkah">Atur jumlah (+) atau (-)</span>
+            </div>
+          </div>
+          <div class="panah-langkah">➔</div>
+          <div class="langkah-item langkah-bayar">
+            <span class="nomor-langkah nomor-hijau">3</span>
+            <div class="teks-langkah">
+              <strong class="judul-langkah">Bayar Selesai</strong>
+              <span class="sub-langkah">Klik tombol hijau [F9]</span>
+            </div>
+          </div>
         </div>
 
         <!-- Area Pencarian & Scan -->
@@ -301,7 +370,7 @@ function transaksiBaru() {
               v-model="teksPencarian"
               type="text"
               class="input-teks input-scan"
-              placeholder="Ketik Nama Produk / Scan Barcode... [F2]"
+              placeholder="🔍 Ketik nama barang atau scan barcode di sini... [F2]"
               @keydown.enter="tanganiInputScanEnter"
             />
           </div>
@@ -343,7 +412,7 @@ function transaksiBaru() {
           </button>
         </div>
 
-        <!-- Grid Card Produk Putih Bersih, Elegan, Dilengkapi Foto Thumbnail Ringan -->
+        <!-- Grid Card Produk Putih Bersih, Elegan, Dilengkapi Foto Thumbnail & Tombol Preview -->
         <div class="grid-produk">
           <div 
             v-for="produk in produkTerfilter" 
@@ -351,7 +420,7 @@ function transaksiBaru() {
             class="card-produk"
             :class="{ 'stok-kosong': produk.stok <= 0 }"
             @click="tanganiKlikProduk(produk)"
-            title="Klik untuk tambah ke keranjang"
+            title="Klik untuk masukkan ke keranjang"
           >
             <div class="info-atas-produk">
               <span class="badge-kategori-kecil" :style="{ background: warnaKategori(produk.kategori).bg, color: warnaKategori(produk.kategori).text, borderColor: warnaKategori(produk.kategori).border }">
@@ -361,23 +430,36 @@ function transaksiBaru() {
                 class="badge-stok"
                 :class="produk.stok <= 0 ? 'stok-merah' : (produk.stok <= produk.min_stok ? 'stok-kuning' : 'stok-hijau')"
               >
-                {{ produk.stok <= 0 ? 'Stok Habis' : 'Stok: ' + produk.stok }}
+                {{ produk.stok <= 0 ? 'Habis' : (produk.stok <= produk.min_stok ? `Sisa ${produk.stok}` : `Tersedia ${produk.stok}`) }}
               </span>
             </div>
 
-            <!-- Wadah Foto Produk Ringan & Hemat Memori -->
+            <!-- Wadah Foto Produk Ringan & Interaktif Preview -->
             <div class="wadah-foto-produk">
               <img v-if="produk.foto" :src="produk.foto" :alt="produk.nama" class="foto-kartu-pos" loading="lazy" />
               <div v-else class="foto-pos-placeholder" :style="{ background: warnaKategori(produk.kategori).bg, color: warnaKategori(produk.kategori).text }">
                 <span class="huruf-kategori-pos">{{ (produk.nama || 'P').charAt(0).toUpperCase() }}</span>
               </div>
+
+              <!-- Tombol Zoom Preview Foto yang Jelas -->
+              <button 
+                class="btn-zoom-foto-kartu"
+                @click.stop="bukaPreviewProduk(produk)"
+                :title="produk.foto ? 'Lihat foto ukuran besar' : 'Lihat info lengkap produk'"
+              >
+                <ZoomIn :size="13" />
+                <span>Preview</span>
+              </button>
             </div>
             
             <div class="nama-produk">{{ produk.nama }}</div>
             
             <div class="bawah-kartu">
               <div class="harga-produk">{{ formatRupiah(produk.harga) }}</div>
-              <div class="tombol-tambah-mini">+ Tambah</div>
+              <div class="tombol-tambah-mini" :class="{ 'habis': produk.stok <= 0 }">
+                <Plus v-if="produk.stok > 0" :size="14" />
+                <span>{{ produk.stok <= 0 ? 'Habis' : 'Tambah' }}</span>
+              </div>
             </div>
           </div>
 
@@ -403,15 +485,28 @@ function transaksiBaru() {
               <div class="sub-keranjang">{{ keranjangStore.totalKuantitas }} barang dipilih</div>
             </div>
           </div>
-          <button 
-            v-if="keranjangStore.itemKeranjang.length > 0"
-            class="tombol-kosongkan"
-            @click="keranjangStore.kosongkanKeranjang"
-            title="Kosongkan keranjang belanja"
-          >
-            <Trash2 :size="16" />
-            <span>Kosongkan</span>
-          </button>
+
+          <div class="flex items-center gap-2">
+            <!-- Tombol Kembali ke Katalog untuk Mobile/Tablet -->
+            <button 
+              class="btn-kembali-katalog-mobile"
+              @click="tabAktifMobile = 'katalog'"
+              title="Kembali ke pilihan barang"
+            >
+              <ArrowLeft :size="15" />
+              <span>Pilih Barang</span>
+            </button>
+
+            <button 
+              v-if="keranjangStore.itemKeranjang.length > 0"
+              class="tombol-kosongkan"
+              @click="keranjangStore.kosongkanKeranjang"
+              title="Kosongkan keranjang belanja"
+            >
+              <Trash2 :size="16" />
+              <span>Kosongkan</span>
+            </button>
+          </div>
         </div>
 
         <!-- Daftar Baris Item Keranjang -->
@@ -419,7 +514,7 @@ function transaksiBaru() {
           <div v-if="keranjangStore.itemKeranjang.length === 0" class="keranjang-kosong">
             <div class="ikon-keranjang-kosong">🛒</div>
             <div class="tebal teks-utama">Keranjang Masih Kosong</div>
-            <div class="hint-keranjang">Klik produk di sebelah kiri atau scan barcode barang</div>
+            <div class="hint-keranjang">Klik barang di katalog untuk menambahkan ke keranjang ini</div>
           </div>
 
           <div 
@@ -505,7 +600,10 @@ function transaksiBaru() {
             @click="tampilModalBayar = true"
           >
             <CreditCard :size="24" />
-            <span>BAYAR SEKARANG [F9]</span>
+            <div class="teks-btn-bayar-wrap">
+              <span class="teks-utama-bayar">BAYAR SEKARANG [F9]</span>
+              <span class="subteks-bayar">Uang Tunai, QRIS, atau Transfer</span>
+            </div>
           </button>
           <button 
             v-else
@@ -513,10 +611,35 @@ function transaksiBaru() {
             @click="tampilModalBukaShift = true"
           >
             <DoorClosed :size="24" />
-            <span>BUKA SHIFT UNTUK TRANSAKSI</span>
+            <div class="teks-btn-bayar-wrap">
+              <span class="teks-utama-bayar">BUKA SHIFT UNTUK TRANSAKSI</span>
+              <span class="subteks-bayar">Klik untuk masukkan uang modal laci</span>
+            </div>
           </button>
         </div>
       </aside>
+    </div>
+
+    <!-- BILAH MELAYANG (FLOATING BAR) DI BAWAH UNTUK TABLET & MOBILE -->
+    <div 
+      v-if="tabAktifMobile === 'katalog' && keranjangStore.totalKuantitas > 0" 
+      class="bar-melayang-keranjang-mobile"
+      @click="tabAktifMobile = 'keranjang'"
+    >
+      <div class="info-melayang-kiri">
+        <div class="badge-ikon-melayang">
+          <ShoppingBag :size="20" />
+          <span class="angka-qty-melayang">{{ keranjangStore.totalKuantitas }}</span>
+        </div>
+        <div class="teks-melayang">
+          <div class="sub-melayang">{{ keranjangStore.totalKuantitas }} Barang Dipilih</div>
+          <div class="total-melayang">{{ formatRupiah(keranjangStore.totalAkhir) }}</div>
+        </div>
+      </div>
+      <button class="btn-buka-keranjang-melayang">
+        <span>Lihat Keranjang & Bayar</span>
+        <ChevronRight :size="18" />
+      </button>
     </div>
 
     <!-- MODAL POPUPS -->
@@ -544,6 +667,22 @@ function transaksiBaru() {
       :transaksi="transaksiTerakhir" 
       :kembalian="kembalianTerakhir"
       @transaksiBaru="transaksiBaru" 
+    />
+
+    <!-- MODAL PREVIEW FOTO PRODUK (ZOOM BESAR & BISA LANGSUNG BELI) -->
+    <ModalPreviewFoto 
+      v-if="tampilModalPreview && produkPreview" 
+      :foto="produkPreview.foto" 
+      :nama="produkPreview.nama" 
+      :sku="produkPreview.sku" 
+      :barcode="produkPreview.barcode" 
+      :kategori="produkPreview.kategori" 
+      :harga="produkPreview.harga" 
+      :stok="produkPreview.stok" 
+      :min-stok="produkPreview.min_stok"
+      :tampilkan-aksi-keranjang="true"
+      @tutup="tampilModalPreview = false" 
+      @tambah="tambahItemDariPreview" 
     />
   </div>
 </template>
@@ -582,16 +721,78 @@ function transaksiBaru() {
 .judul-kunci { font-size: 1.6rem; font-weight: 900; color: #0f172a; }
 .sub-kunci { font-size: 1rem; color: #475569; margin-top: 8px; line-height: 1.5; }
 
+/* Tab Switcher Responsif Tablet & Mobile */
+.tab-pos-responsif {
+  display: none;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+@media (max-width: 1024px) {
+  .tab-pos-responsif {
+    display: flex;
+  }
+}
+.tab-item-responsif {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+.tab-item-responsif.aktif {
+  background: #1d4ed8;
+  color: #ffffff;
+  border-color: #1d4ed8;
+  box-shadow: 0 4px 14px rgba(29, 78, 216, 0.3);
+}
+.badge-tab-nav {
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  background: #f1f5f9;
+  color: #475569;
+}
+.tab-item-responsif.aktif .badge-tab-nav {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+.badge-tab-nav.badge-hijau {
+  background: #10b981;
+  color: #ffffff;
+}
+
+/* Grid POS Responsif */
 .grid-pos {
   display: grid;
-  grid-template-columns: 1fr 440px;
+  grid-template-columns: minmax(0, 1fr) clamp(380px, 32vw, 450px);
   gap: 20px;
-  height: calc(100vh - 104px);
+  height: calc(100vh - 90px);
 }
+
 @media (max-width: 1024px) {
   .grid-pos {
     grid-template-columns: 1fr;
     height: auto;
+  }
+  .pos-view-katalog .kolom-keranjang {
+    display: none !important;
+  }
+  .pos-view-keranjang .kolom-katalog {
+    display: none !important;
+  }
+  .pos-view-keranjang .kolom-keranjang {
+    min-height: 75vh;
   }
 }
 
@@ -599,7 +800,7 @@ function transaksiBaru() {
 .kolom-katalog {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   overflow: hidden;
 }
 
@@ -669,10 +870,67 @@ function transaksiBaru() {
   background: #fee2e2;
 }
 
-/* Wadah Foto Produk Hemat Memori */
+/* Panduan Visual 3 Langkah Orang Awam */
+.panduan-tiga-langkah {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #ffffff;
+  border: 1.5px solid #dbeafe;
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.05);
+}
+.langkah-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.nomor-langkah {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+.nomor-langkah.nomor-hijau {
+  background: #059669;
+}
+.teks-langkah {
+  display: flex;
+  flex-direction: column;
+}
+.judul-langkah {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+.sub-langkah {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+.panah-langkah {
+  color: #94a3b8;
+  font-weight: 900;
+  font-size: 0.95rem;
+}
+@media (max-width: 640px) {
+  .panduan-tiga-langkah {
+    display: none;
+  }
+}
+
+/* Wadah Foto Produk & Tombol Zoom Preview */
 .wadah-foto-produk {
   width: 100%;
-  height: 100px;
+  height: 110px;
   border-radius: 8px;
   overflow: hidden;
   margin: 8px 0;
@@ -681,6 +939,7 @@ function transaksiBaru() {
   justify-content: center;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
+  position: relative;
 }
 .foto-kartu-pos {
   width: 100%;
@@ -700,9 +959,36 @@ function transaksiBaru() {
   user-select: none;
 }
 .huruf-kategori-pos {
-  font-size: 2rem;
+  font-size: 2.2rem;
   font-weight: 900;
   letter-spacing: -1px;
+}
+
+.btn-zoom-foto-kartu {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #1d4ed8;
+  border: 1px solid #cbd5e1;
+  border-radius: 9999px;
+  padding: 4px 9px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: all 0.2s ease;
+  backdrop-filter: blur(2px);
+  z-index: 2;
+}
+.btn-zoom-foto-kartu:hover {
+  background: #1d4ed8;
+  color: #ffffff;
+  border-color: #1d4ed8;
+  transform: scale(1.05);
 }
 
 /* Tombol Bayar Buka Shift */
@@ -1118,14 +1404,169 @@ function transaksiBaru() {
 }
 
 .tombol-bayar {
-  height: 56px;
-  font-size: 1.25rem;
+  height: 60px;
+  font-size: 1.15rem;
   letter-spacing: 0.02em;
   background: linear-gradient(135deg, #059669, #10b981);
   box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
 }
 .tombol-bayar:hover:not(:disabled) {
   background: linear-gradient(135deg, #047857, #059669);
   box-shadow: 0 8px 24px rgba(16, 185, 129, 0.5);
+}
+
+.teks-btn-bayar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+.teks-utama-bayar {
+  font-size: 1.1rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+.subteks-bayar {
+  font-size: 0.72rem;
+  opacity: 0.92;
+  font-weight: 600;
+}
+
+/* Tombol Kembali ke Katalog Khusus Mobile / Tablet */
+.btn-kembali-katalog-mobile {
+  display: none;
+}
+@media (max-width: 1024px) {
+  .btn-kembali-katalog-mobile {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .btn-kembali-katalog-mobile:hover {
+    background: #dbeafe;
+  }
+}
+
+/* Bilah Melayang Keranjang Belanja di Mobile */
+.bar-melayang-keranjang-mobile {
+  display: none;
+}
+@media (max-width: 1024px) {
+  .bar-melayang-keranjang-mobile {
+    display: flex;
+    position: fixed;
+    bottom: 14px;
+    left: 14px;
+    right: 14px;
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+    color: #ffffff;
+    padding: 12px 18px;
+    border-radius: 14px;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 10px 25px rgba(29, 78, 216, 0.45);
+    z-index: 99;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+.info-melayang-kiri {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.badge-ikon-melayang {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.angka-qty-melayang {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 900;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+}
+.teks-melayang {
+  display: flex;
+  flex-direction: column;
+}
+.sub-melayang {
+  font-size: 0.8rem;
+  opacity: 0.9;
+  font-weight: 600;
+}
+.total-melayang {
+  font-size: 1.25rem;
+  font-weight: 900;
+  font-family: var(--font-angka);
+}
+.btn-buka-keranjang-melayang {
+  background: #ffffff;
+  color: #1d4ed8;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.tombol-tambah-mini {
+  font-size: 0.8rem;
+  font-weight: 800;
+  background: #eff6ff;
+  color: #2563eb;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid #bfdbfe;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.tombol-tambah-mini.habis {
+  background: #f1f5f9;
+  color: #94a3b8;
+  border-color: #cbd5e1;
+}
+.card-produk:hover .tombol-tambah-mini:not(.habis) {
+  background: #2563eb;
+  color: #ffffff;
 }
 </style>

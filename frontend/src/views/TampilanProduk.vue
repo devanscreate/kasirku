@@ -4,6 +4,7 @@ import { panggilApi } from '../layanan/api'
 import { dbLokal } from '../basis_data'
 import { sinkronkanKatalogProduk } from '../layanan/sinkronisasi'
 import { kompresFotoProduk } from '../layanan/utilitas_gambar'
+import ModalPreviewFoto from '../komponen/ModalPreviewFoto.vue'
 import { 
   Package, 
   Plus, 
@@ -16,7 +17,8 @@ import {
   Check, 
   AlertCircle,
   Camera,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ZoomIn
 } from 'lucide-vue-next'
 
 const daftarProduk = ref([])
@@ -28,6 +30,14 @@ const tampilModalForm = ref(false)
 const tampilModalImpor = ref(false)
 const isEdit = ref(false)
 const idProdukEdit = ref(null)
+
+const tampilModalPreview = ref(false)
+const produkPreview = ref(null)
+
+function bukaPreviewProduk(p) {
+  produkPreview.value = p
+  tampilModalPreview.value = true
+}
 
 const inputFotoRef = ref(null)
 const sedangKompresFoto = ref(false)
@@ -357,10 +367,18 @@ function dapatkanKelasKategori(kat) {
           <tbody>
             <tr v-for="p in produkTerfilter" :key="p.id" class="baris-produk">
               <td>
-                <div class="thumb-tabel-wadah">
+                <div 
+                  class="thumb-tabel-wadah" 
+                  :class="{ 'bisa-klik': true }"
+                  @click="bukaPreviewProduk(p)" 
+                  title="Klik untuk melihat pratinjau foto produk"
+                >
                   <img v-if="p.foto" :src="p.foto" :alt="p.nama" class="img-thumb-tabel" loading="lazy" />
                   <div v-else class="thumb-tabel-kosong" :class="dapatkanKelasKategori(p.kategori)">
                     <span>{{ (p.nama || 'P').charAt(0).toUpperCase() }}</span>
+                  </div>
+                  <div v-if="p.foto" class="badge-zoom-hover">
+                    <ZoomIn :size="13" />
                   </div>
                 </div>
               </td>
@@ -592,6 +610,21 @@ function dapatkanKelasKategori(kat) {
         </div>
       </div>
     </div>
+
+    <!-- MODAL PREVIEW FOTO PRODUK BESAR -->
+    <ModalPreviewFoto 
+      v-if="tampilModalPreview && produkPreview" 
+      :foto="produkPreview.foto" 
+      :nama="produkPreview.nama" 
+      :sku="produkPreview.sku" 
+      :barcode="produkPreview.barcode" 
+      :kategori="produkPreview.kategori" 
+      :harga="produkPreview.harga" 
+      :stok="produkPreview.stok" 
+      :min-stok="produkPreview.min_stok"
+      :tampilkan-aksi-keranjang="false"
+      @tutup="tampilModalPreview = false" 
+    />
   </div>
 </template>
 
@@ -1121,6 +1154,31 @@ function dapatkanKelasKategori(kat) {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  transition: all 0.2s ease;
+}
+.thumb-tabel-wadah.bisa-klik {
+  cursor: pointer;
+}
+.thumb-tabel-wadah.bisa-klik:hover {
+  transform: scale(1.08);
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+.badge-zoom-hover {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: 7px;
+}
+.thumb-tabel-wadah:hover .badge-zoom-hover {
+  opacity: 1;
 }
 .img-thumb-tabel {
   width: 100%;
