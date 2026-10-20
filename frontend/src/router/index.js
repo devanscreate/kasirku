@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import TampilanLogin from '../views/TampilanLogin.vue'
 import TampilanPOS from '../views/TampilanPOS.vue'
 import TampilanTransaksi from '../views/TampilanTransaksi.vue'
+import TampilanDonasi from '../views/TampilanDonasi.vue'
 import TampilanProduk from '../views/TampilanProduk.vue'
 import TampilanStok from '../views/TampilanStok.vue'
 import TampilanLaporan from '../views/TampilanLaporan.vue'
@@ -29,6 +30,12 @@ const rute = [
     path: '/transaksi',
     name: 'Transaksi',
     component: TampilanTransaksi,
+    meta: { butuhAuth: true }
+  },
+  {
+    path: '/donasi',
+    name: 'Donasi',
+    component: TampilanDonasi,
     meta: { butuhAuth: true }
   },
   {

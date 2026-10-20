@@ -3,20 +3,19 @@ import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useKoneksiStore } from '../stores/koneksi'
-import ModalDonasiPelanggan from './ModalDonasiPelanggan.vue'
 import { 
   ShoppingCart, 
   Receipt, 
   HeartHandshake, 
   Package, 
-  Boxes,
+  Boxes, 
   BarChart3, 
   Settings, 
-  AlertTriangle,
+  AlertTriangle, 
   User, 
-  LogOut,
-  X,
-  Sparkles
+  LogOut, 
+  X, 
+  Sparkles 
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -32,24 +31,6 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const koneksiStore = useKoneksiStore()
-
-const tampilModalDonasi = ref(false)
-
-function bukaDonasi() {
-  tampilModalDonasi.value = true
-  // Di layar mobile/tablet, otomatis tutup sidebar drawer
-  if (window.innerWidth < 1024) {
-    emit('tutup')
-  }
-}
-
-function tanganiPotongBelanja(data) {
-  tampilModalDonasi.value = false
-  window.dispatchEvent(new CustomEvent('donasi:potong-belanja', { detail: data }))
-  if (route.path !== '/pos') {
-    router.push('/pos')
-  }
-}
 
 function navigasiKe(rute) {
   router.push(rute)
@@ -150,11 +131,12 @@ function keluar() {
             </div>
           </router-link>
 
-          <!-- 3. Menu Donasi (Celengan Tabungan Kembalian Pembeli) -->
-          <button 
-            type="button" 
+          <!-- 3. Menu Donasi (Tabungan Celengan Kembalian Pembeli - Halaman Khusus) -->
+          <router-link 
+            to="/donasi" 
             class="item-menu-sidebar btn-menu-donasi"
-            @click="bukaDonasi"
+            :class="{ 'aktif': route.path === '/donasi' }"
+            @click="window.innerWidth < 1024 && emit('tutup')"
             title="Tabungan Donasi Kembalian Pembeli"
           >
             <div class="ikon-wrapper ikon-donasi">
@@ -167,7 +149,7 @@ function keluar() {
               <Sparkles :size="11" class="teks-emas" />
               <span>Tabungan</span>
             </span>
-          </button>
+          </router-link>
         </div>
 
         <!-- GRUP 2: MANAJEMEN TOKO (Untuk Manajer & Owner) -->
@@ -229,13 +211,6 @@ function keluar() {
           </button>
         </div>
       </div>
-
-      <!-- MODAL TABUNGAN DONASI PELANGGAN -->
-      <ModalDonasiPelanggan 
-        v-if="tampilModalDonasi" 
-        @tutup="tampilModalDonasi = false" 
-        @terapkanPotongBelanja="tanganiPotongBelanja" 
-      />
     </aside>
   </div>
 </template>
@@ -264,13 +239,13 @@ function keluar() {
   left: 0;
   bottom: 0;
   width: 260px;
-  background: #0f172a;
-  border-right: 1px solid #1e293b;
+  background: #ffffff;
+  border-right: 1.5px solid #f1f5f9;
   display: flex;
   flex-direction: column;
   z-index: 999;
   transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.04);
 }
 
 /* Keadaan Tertutup & Terbuka di Desktop */
@@ -301,8 +276,9 @@ function keluar() {
   justify-content: space-between;
   padding: 16px 18px;
   height: 60px;
-  border-bottom: 1px solid #1e293b;
+  border-bottom: 1.5px solid #f1f5f9;
   flex-shrink: 0;
+  background: #ffffff;
 }
 
 .brand-sidebar {
@@ -314,17 +290,17 @@ function keluar() {
 }
 
 .logo-badge-sidebar {
-  width: 32px;
-  height: 32px;
-  background: #ffffff;
-  color: #0f172a;
+  width: 34px;
+  height: 34px;
+  background: #2563eb;
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 900;
-  font-size: 1.1rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.2);
+  font-size: 1.15rem;
+  border-radius: 10px;
+  box-shadow: none;
 }
 
 .brand-text {
@@ -333,17 +309,18 @@ function keluar() {
 }
 
 .brand-nama {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #0f172a;
   line-height: 1.15;
   letter-spacing: -0.02em;
 }
 
 .brand-tagline {
   font-size: 0.68rem;
-  color: #94a3b8;
-  font-weight: 600;
+  color: #2563eb;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .btn-tutup-sidebar {
@@ -360,8 +337,8 @@ function keluar() {
 }
 
 .btn-tutup-sidebar:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  background: #f1f5f9;
+  color: #0f172a;
 }
 
 /* Navigasi Scrollable (Banyak Menu) */
@@ -370,14 +347,14 @@ function keluar() {
   overflow-y: auto;
   padding: 16px 12px;
   scrollbar-width: thin;
-  scrollbar-color: #334155 #0f172a;
+  scrollbar-color: #cbd5e1 #f8fafc;
 }
 
 .nav-sidebar-scroll::-webkit-scrollbar {
   width: 5px;
 }
 .nav-sidebar-scroll::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #cbd5e1;
   border-radius: 4px;
 }
 
@@ -396,23 +373,23 @@ function keluar() {
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.06em;
-  color: #64748b;
+  color: #94a3b8;
   padding: 4px 10px 6px 10px;
   text-transform: uppercase;
 }
 
-/* Item Menu Sidebar */
+/* Item Menu Sidebar (Aesthetic Blue & White - No Glow) */
 .item-menu-sidebar {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 12px;
-  border-radius: 8px;
-  color: #94a3b8;
+  padding: 10px 14px;
+  border-radius: 12px;
+  color: #475569;
   text-decoration: none;
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  transition: all 0.15s ease;
+  transition: all 0.18s ease;
   background: transparent;
   border: none;
   width: 100%;
@@ -423,16 +400,16 @@ function keluar() {
 }
 
 .item-menu-sidebar:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #ffffff;
+  background: #eff6ff;
+  color: #2563eb;
   transform: translateX(2px);
 }
 
 .item-menu-sidebar.aktif {
-  background: #1e293b;
+  background: #2563eb;
   color: #ffffff;
   font-weight: 700;
-  box-shadow: inset 3px 0 0 #10b981;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .ikon-wrapper {
@@ -445,7 +422,7 @@ function keluar() {
 }
 
 .item-menu-sidebar.aktif .ikon-wrapper {
-  color: #10b981;
+  color: #ffffff;
 }
 
 .teks-menu {
@@ -463,29 +440,38 @@ function keluar() {
 
 /* Badge Donasi */
 .btn-menu-donasi:hover .ikon-donasi {
-  color: #f59e0b;
+  color: #2563eb;
 }
 
 .badge-tabungan-sidebar {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  padding: 2px 6px;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  padding: 2px 7px;
   border-radius: 9999px;
   font-size: 0.68rem;
   font-weight: 700;
 }
 
+.item-menu-sidebar.aktif .badge-tabungan-sidebar {
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
 .teks-emas {
-  color: #f59e0b;
+  color: #2563eb;
+}
+.item-menu-sidebar.aktif .teks-emas {
+  color: #ffffff;
 }
 
 /* Badge Peringatan Gagal Sync */
 .item-gagal-sync {
-  color: #f87171 !important;
+  color: #dc2626 !important;
 }
 .badge-angka-gagal {
   background: #ef4444;
@@ -499,8 +485,8 @@ function keluar() {
 /* Footer Sidebar: User Area */
 .footer-sidebar {
   padding: 12px;
-  border-top: 1px solid #1e293b;
-  background: #0b1120;
+  border-top: 1.5px solid #f1f5f9;
+  background: #f8fafc;
   flex-shrink: 0;
 }
 
@@ -509,20 +495,22 @@ function keluar() {
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
 }
 
 .avatar-user-sidebar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #1e293b;
-  color: #94a3b8;
+  background: #2563eb;
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: none;
 }
 
 .detail-user-sidebar {
@@ -535,7 +523,7 @@ function keluar() {
 .nama-user-sidebar {
   font-size: 0.825rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #0f172a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -543,7 +531,8 @@ function keluar() {
 
 .peran-user-sidebar {
   font-size: 0.68rem;
-  color: #94a3b8;
+  color: #2563eb;
+  font-weight: 700;
   text-transform: capitalize;
 }
 
@@ -562,8 +551,8 @@ function keluar() {
 }
 
 .btn-logout-sidebar:hover {
-  background: rgba(239, 68, 68, 0.18);
-  color: #f87171;
+  background: #fee2e2;
+  color: #ef4444;
 }
 
 /* Animasi Fade Backdrop */

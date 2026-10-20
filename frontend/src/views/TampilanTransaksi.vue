@@ -582,12 +582,12 @@ const countStatus = computed(() => {
   width: 52px;
   height: 52px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  background: #2563eb;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.25);
+  box-shadow: none;
 }
 
 .judul-halaman {
@@ -608,7 +608,7 @@ const countStatus = computed(() => {
   align-items: center;
   gap: 8px;
   padding: 10px 18px;
-  background: #f8fafc;
+  background: #ffffff;
   border: 1.5px solid #cbd5e1;
   border-radius: var(--radius-md);
   color: #0f172a;
@@ -620,7 +620,7 @@ const countStatus = computed(() => {
 
 .tombol-segarkan:hover {
   background: #eff6ff;
-  border-color: #3b82f6;
+  border-color: #2563eb;
   color: #1d4ed8;
 }
 
@@ -645,8 +645,8 @@ const countStatus = computed(() => {
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: #f8fafc;
-  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
   border-radius: 9999px;
   color: #334155;
   font-weight: 700;
@@ -656,36 +656,37 @@ const countStatus = computed(() => {
 }
 
 .pill-filter:hover {
-  background: #e2e8f0;
-  border-color: #94a3b8;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
 }
 
 .pill-filter.aktif {
-  background: #1e3a8a;
-  border-color: #1e3a8a;
+  background: #2563eb;
+  border-color: #2563eb;
   color: #ffffff;
-  box-shadow: 0 4px 10px rgba(30, 58, 138, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .pill-sukses.aktif {
   background: #15803d;
   border-color: #15803d;
   color: #ffffff;
-  box-shadow: 0 4px 10px rgba(21, 128, 61, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .pill-bahaya.aktif {
   background: #b91c1c;
   border-color: #b91c1c;
   color: #ffffff;
-  box-shadow: 0 4px 10px rgba(185, 28, 28, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .pill-peringatan.aktif {
   background: #d97706;
   border-color: #d97706;
   color: #ffffff;
-  box-shadow: 0 4px 10px rgba(217, 119, 6, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .badge-hitung {

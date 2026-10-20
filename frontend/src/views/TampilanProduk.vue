@@ -732,12 +732,12 @@ function dapatkanKelasKategori(kat) {
   width: 52px;
   height: 52px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  background: #2563eb;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.25);
+  box-shadow: none;
 }
 
 .judul-halaman {
@@ -758,7 +758,7 @@ function dapatkanKelasKategori(kat) {
   align-items: center;
   gap: 8px;
   padding: 10px 18px;
-  background: #f8fafc;
+  background: #ffffff;
   border: 1.5px solid #cbd5e1;
   border-radius: var(--radius-md);
   color: #0f172a;
@@ -770,7 +770,7 @@ function dapatkanKelasKategori(kat) {
 
 .tombol-sekunder-biru:hover {
   background: #eff6ff;
-  border-color: #3b82f6;
+  border-color: #2563eb;
   color: #1d4ed8;
 }
 
@@ -779,19 +779,19 @@ function dapatkanKelasKategori(kat) {
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: #059669;
-  border: none;
+  background: #2563eb;
+  border: 1px solid #1d4ed8;
   border-radius: var(--radius-md);
   color: #ffffff;
   font-weight: 700;
   font-size: 0.925rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .tombol-tambah-produk:hover {
-  background: #047857;
+  background: #1d4ed8;
   transform: translateY(-1px);
 }
 
@@ -812,48 +812,50 @@ function dapatkanKelasKategori(kat) {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: #f8fafc;
-  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
   color: #334155;
 }
 
 .pill-kategori:hover {
-  background: #e2e8f0;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
 }
 
 .kategori-semua.aktif {
-  background: #1e3a8a;
-  border-color: #1e3a8a;
+  background: #2563eb;
+  border-color: #2563eb;
   color: #ffffff;
-  box-shadow: 0 4px 10px rgba(30, 58, 138, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .kategori-sembako.aktif {
   background: #15803d;
   border-color: #15803d;
   color: #ffffff;
-  box-shadow: 0 4px 10px rgba(21, 128, 61, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .kategori-minuman.aktif {
   background: #0284c7;
   border-color: #0284c7;
   color: #ffffff;
-  box-shadow: 0 4px 10px rgba(2, 132, 199, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .kategori-makanan.aktif {
   background: #d97706;
   border-color: #d97706;
   color: #ffffff;
-  box-shadow: 0 4px 10px rgba(217, 119, 6, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .kategori-kebersihan.aktif {
   background: #7c3aed;
   border-color: #7c3aed;
   color: #ffffff;
-  box-shadow: 0 4px 10px rgba(124, 58, 237, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .badge-total-kategori {

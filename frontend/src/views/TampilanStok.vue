@@ -394,6 +394,8 @@ function padaGantiProdukOpname() {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
   padding-bottom: 20px;
   border-bottom: 1px solid #f1f5f9;
 }
@@ -408,12 +410,12 @@ function padaGantiProdukOpname() {
   width: 52px;
   height: 52px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  background: #2563eb;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.25);
+  box-shadow: none;
 }
 
 .judul-halaman {
@@ -462,28 +464,28 @@ function padaGantiProdukOpname() {
   background: #15803d;
   border-color: #15803d;
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(21, 128, 61, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .tab-sesuaikan.aktif {
   background: #d97706;
   border-color: #d97706;
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .tab-opname.aktif {
   background: #7c3aed;
   border-color: #7c3aed;
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .tab-riwayat.aktif {
-  background: #1e3a8a;
-  border-color: #1e3a8a;
+  background: #2563eb;
+  border-color: #2563eb;
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 /* Informational Guides */

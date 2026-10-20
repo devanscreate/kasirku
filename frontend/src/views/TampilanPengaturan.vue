@@ -93,6 +93,9 @@ async function simpanUserBaru() {
       <!-- Header Pengaturan -->
       <div class="header-pengaturan">
         <div class="header-info">
+          <div class="ikon-header">
+            <Settings :size="26" />
+          </div>
           <div>
             <h1 class="judul-halaman">Pengaturan Toko & Pengguna</h1>
             <p class="sub-halaman">Konfigurasi profil toko, aturan pajak, batas diskon kasir, printer struk, dan hak akses staf.</p>
@@ -306,6 +309,8 @@ async function simpanUserBaru() {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
   padding-bottom: 20px;
   border-bottom: 1px solid #f1f5f9;
 }
@@ -320,12 +325,12 @@ async function simpanUserBaru() {
   width: 52px;
   height: 52px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  background: #2563eb;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.25);
+  box-shadow: none;
 }
 
 .judul-halaman {
@@ -344,6 +349,7 @@ async function simpanUserBaru() {
 /* Tabs */
 .tab-pengaturan {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   border-bottom: 2px solid #f1f5f9;
   padding-bottom: 16px;
@@ -370,17 +376,17 @@ async function simpanUserBaru() {
 }
 
 .tab-toko.aktif {
-  background: #1e3a8a;
-  border-color: #1e3a8a;
+  background: #2563eb;
+  border-color: #2563eb;
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .tab-karyawan.aktif {
   background: #7c3aed;
   border-color: #7c3aed;
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .pesan-sukses-box {
@@ -455,19 +461,20 @@ async function simpanUserBaru() {
   justify-content: center;
   gap: 8px;
   padding: 12px 24px;
-  background: #059669;
-  border: none;
+  background: #2563eb;
+  border: 1px solid #1d4ed8;
   border-radius: var(--radius-md);
   color: #ffffff;
   font-weight: 800;
   font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .tombol-simpan-pengaturan:hover {
-  background: #047857;
+  background: #1d4ed8;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 /* User management */

@@ -9,12 +9,14 @@ import {
   RefreshCw, 
   ShoppingCart, 
   Receipt, 
+  HeartHandshake,
   Package, 
   Boxes, 
   BarChart3, 
   Settings, 
   AlertTriangle,
-  User
+  User,
+  Bell
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -38,6 +40,7 @@ const infoHalaman = computed(() => {
   const p = route.path
   if (p === '/pos') return { judul: 'Kasir', sub: 'Point of Sale', ikon: ShoppingCart }
   if (p === '/transaksi') return { judul: 'Riwayat Struk', sub: 'Daftar Transaksi', ikon: Receipt }
+  if (p === '/donasi') return { judul: 'Tabungan Donasi', sub: 'Celengan Kembalian Pembeli', ikon: HeartHandshake }
   if (p === '/produk') return { judul: 'Katalog Produk', sub: 'Kelola Barang', ikon: Package }
   if (p === '/stok') return { judul: 'Stok Barang', sub: 'Inventori Toko', ikon: Boxes }
   if (p === '/laporan') return { judul: 'Laporan', sub: 'Statistik Penjualan', ikon: BarChart3 }
@@ -59,7 +62,7 @@ const infoHalaman = computed(() => {
         @click="emit('toggleSidebar')"
         title="Buka / Tutup Sidebar Menu"
       >
-        <Menu :size="20" class="ikon-hamburger" />
+        <Menu :size="19" class="ikon-hamburger" />
       </button>
 
       <!-- Logo Mini (Tampil Saat Sidebar Ditutup) -->
@@ -113,12 +116,21 @@ const infoHalaman = computed(() => {
         </span>
       </button>
 
-      <!-- Avatar Ringkas Kasir -->
+      <!-- Tombol Notifikasi Lingkar (Sesuai Referensi Gambar) -->
+      <button type="button" class="btn-notifikasi" title="Notifikasi Sistem">
+        <Bell :size="16" />
+        <span class="titik-notif-oranye"></span>
+      </button>
+
+      <!-- Avatar Ringkas Kasir (Gaya Bubble POS) -->
       <div class="user-badge-mini" :title="`${authStore.namaLengkap} (${authStore.peran})`">
         <div class="avatar-lingkar">
-          <User :size="13" />
+          <User :size="14" />
         </div>
-        <span class="nama-user-mini">{{ authStore.namaLengkap }}</span>
+        <div class="user-info-teks">
+          <span class="nama-user-mini">{{ authStore.namaLengkap }}</span>
+          <span class="peran-user-mini">{{ authStore.peran }}</span>
+        </div>
       </div>
     </div>
   </header>
@@ -126,18 +138,19 @@ const infoHalaman = computed(() => {
 
 <style scoped>
 .header-atas {
-  height: 56px;
-  background: #0f172a;
-  border-bottom: 1px solid #1e293b;
+  height: 60px;
+  background: #ffffff;
+  border-bottom: 1.5px solid #f1f5f9;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 18px;
   position: sticky;
   top: 0;
   z-index: 50;
-  color: #ffffff;
+  color: #1e293b;
   flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
 }
 
 .sisi-kiri-header {
@@ -148,22 +161,23 @@ const infoHalaman = computed(() => {
 
 /* Tombol 3 Garis (Hamburger Button) */
 .btn-hamburger {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #f8fafc;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  color: #475569;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
+  transition: all 0.18s ease;
 }
 
 .btn-hamburger:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #1d4ed8;
   transform: scale(1.03);
 }
 
@@ -172,8 +186,9 @@ const infoHalaman = computed(() => {
 }
 
 .btn-hamburger.aktif {
-  background: #1e293b;
-  border-color: #334155;
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #1d4ed8;
 }
 
 .ikon-hamburger {
@@ -190,27 +205,28 @@ const infoHalaman = computed(() => {
 }
 
 .logo-badge-mini {
-  width: 24px;
-  height: 24px;
-  background: #ffffff;
-  color: #0f172a;
+  width: 28px;
+  height: 28px;
+  background: #2563eb;
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 900;
-  font-size: 0.85rem;
-  border-radius: 6px;
+  font-size: 0.95rem;
+  border-radius: 8px;
+  box-shadow: none;
 }
 
 .logo-nama-mini {
   font-weight: 800;
-  font-size: 0.95rem;
-  color: #ffffff;
-  letter-spacing: -0.01em;
+  font-size: 1rem;
+  color: #0f172a;
+  letter-spacing: -0.02em;
 }
 
 .pemisah-mini {
-  color: #475569;
+  color: #cbd5e1;
   font-size: 0.9rem;
   margin-left: 2px;
 }
@@ -222,9 +238,9 @@ const infoHalaman = computed(() => {
 }
 
 .halaman-judul {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
   letter-spacing: -0.01em;
 }
 
@@ -240,12 +256,12 @@ const infoHalaman = computed(() => {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.775rem;
-  color: #e2e8f0;
+  color: #1e40af;
 }
 
 @media (max-width: 640px) {
@@ -259,16 +275,17 @@ const infoHalaman = computed(() => {
   height: 7px;
   background: #10b981;
   border-radius: 50%;
-  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+  box-shadow: none;
 }
 
 .shift-label {
-  color: #94a3b8;
+  color: #1e40af;
+  font-weight: 600;
 }
 
 .shift-nominal {
-  font-weight: 700;
-  color: #ffffff;
+  font-weight: 800;
+  color: #2563eb;
 }
 
 /* Status Koneksi */
@@ -276,10 +293,13 @@ const infoHalaman = computed(() => {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px;
+  padding: 4px 9px;
   font-size: 0.75rem;
-  font-weight: 600;
-  color: #94a3b8;
+  font-weight: 700;
+  border-radius: 9999px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
 }
 
 .status-koneksi .titik-koneksi {
@@ -288,18 +308,24 @@ const infoHalaman = computed(() => {
   border-radius: 50%;
 }
 
+.status-koneksi.online {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #065f46;
+}
 .status-koneksi.online .titik-koneksi {
   background: #10b981;
-  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
-}
-
-.status-koneksi.offline .titik-koneksi {
-  background: #ef4444;
-  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+  box-shadow: none;
 }
 
 .status-koneksi.offline {
-  color: #f87171;
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+.status-koneksi.offline .titik-koneksi {
+  background: #ef4444;
+  box-shadow: none;
 }
 
 /* Tombol Sinkron */
@@ -307,28 +333,29 @@ const infoHalaman = computed(() => {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 9px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #94a3b8;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  color: #64748b;
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .btn-sinkron:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #1d4ed8;
 }
 
 .badge-pending {
-  background: #f59e0b;
-  color: #0f172a;
+  background: #2563eb;
+  color: #ffffff;
   border-radius: 9999px;
   font-size: 0.68rem;
   font-weight: 800;
-  padding: 1px 5px;
+  padding: 1px 6px;
 }
 
 .animasi-putar {
@@ -340,44 +367,94 @@ const infoHalaman = computed(() => {
   to { transform: rotate(360deg); }
 }
 
-/* User Badge Mini */
+/* Tombol Notifikasi Lingkar */
+.btn-notifikasi {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.18s ease;
+}
+.btn-notifikasi:hover {
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #1d4ed8;
+}
+.titik-notif-oranye {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 1.5px solid #ffffff;
+}
+
+/* User Badge Kasir */
 .user-badge-mini {
   display: flex;
   align-items: center;
-  gap: 7px;
-  background: rgba(255, 255, 255, 0.04);
-  padding: 4px 10px 4px 5px;
+  gap: 8px;
+  background: #ffffff;
+  padding: 4px 12px 4px 5px;
   border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1.5px solid #e2e8f0;
+  transition: border-color 0.18s ease;
+}
+.user-badge-mini:hover {
+  border-color: #bfdbfe;
+}
+
+.avatar-lingkar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+  flex-shrink: 0;
+}
+
+.user-info-teks {
+  display: flex;
+  flex-direction: column;
+}
+
+.nama-user-mini {
+  font-size: 0.825rem;
+  font-weight: 700;
+  color: #0f172a;
+  max-width: 110px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.15;
+}
+
+.peran-user-mini {
+  font-size: 0.68rem;
+  color: #64748b;
+  text-transform: capitalize;
+  line-height: 1.1;
 }
 
 @media (max-width: 768px) {
-  .user-badge-mini .nama-user-mini {
+  .user-badge-mini .user-info-teks {
     display: none;
   }
   .user-badge-mini {
     padding: 3px;
   }
-}
-
-.avatar-lingkar {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #1e293b;
-  color: #94a3b8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.nama-user-mini {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: #f1f5f9;
-  max-width: 110px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 </style>

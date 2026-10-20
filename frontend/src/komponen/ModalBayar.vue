@@ -975,11 +975,11 @@ function tanganiPintasanModal(e) {
 
 /* KARTU RINGKASAN TAGIHAN (LEDGER STYLE) */
 .kartu-ringkasan-tagihan {
-  background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+  background: #f8fafc;
   border-radius: 14px;
   padding: 14px 18px;
-  border: 2px solid #3b82f6;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08);
+  border: 1.5px solid #cbd5e1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 .baris-ledger {
   display: flex;
@@ -1030,7 +1030,7 @@ function tanganiPintasanModal(e) {
 .angka-tagihan-utama {
   font-size: 1.75rem;
   font-weight: 900;
-  color: #1d4ed8;
+  color: #2563eb;
   white-space: nowrap;
 }
 .angka-tagihan-utama.lunas-hijau {
@@ -1453,7 +1453,7 @@ function tanganiPintasanModal(e) {
   color: #475569;
 }
 .petunjuk-wajib-bayar strong {
-  color: #1e40af;
+  color: #2563eb;
 }
 .input-wrap-besar {
   position: relative;
@@ -1476,12 +1476,13 @@ function tanganiPintasanModal(e) {
   height: 50px !important;
   font-family: var(--font-angka);
   color: #0f172a;
-  border: 2px solid #0f172a;
+  border: 2px solid #cbd5e1;
   background: #ffffff;
   border-radius: 10px;
 }
 .input-bayar-besar:focus {
-  border-color: #059669;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px #2563eb;
   outline: none;
 }
 
@@ -1515,22 +1516,23 @@ function tanganiPintasanModal(e) {
 }
 .btn-pecahan:hover {
   transform: translateY(-1px);
-  border-color: #94a3b8;
+  border-color: #bfdbfe;
+  color: #2563eb;
 }
 .btn-uang-pas {
-  background: #ecfdf5 !important;
-  color: #047857 !important;
-  border-color: #10b981 !important;
+  background: #eff6ff !important;
+  color: #1e40af !important;
+  border-color: #bfdbfe !important;
   font-weight: 900 !important;
 }
 .btn-uang-pas:hover {
-  background: #059669 !important;
+  background: #2563eb !important;
   color: #ffffff !important;
 }
 .pecahan-terpilih {
-  background: #0f172a !important;
+  background: #2563eb !important;
   color: #ffffff !important;
-  border-color: #0f172a !important;
+  border-color: #2563eb !important;
 }
 
 /* KOTAK KEMBALIAN */

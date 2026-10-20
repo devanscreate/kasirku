@@ -12,11 +12,19 @@ aplikasi.use(router)
 
 aplikasi.mount('#app')
 
-// Pendaftaran Service Worker untuk PWA Offline-First
-if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((err) => {
-      console.warn('Gagal mendaftarkan service worker:', err)
-    })
+// Pengelolaan Service Worker & Cache:
+// Di lingkungan lokal/dev, unregister service worker dan bersihkan cache agar perubahan kode langsung tampil
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const reg of registrations) {
+      reg.unregister()
+    }
+  })
+}
+if ('caches' in window) {
+  caches.keys().then((names) => {
+    for (const name of names) {
+      caches.delete(name)
+    }
   })
 }

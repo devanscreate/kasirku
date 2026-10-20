@@ -328,6 +328,18 @@ onMounted(async () => {
   window.addEventListener('katalog:diperbarui', muatProdukLokal)
   window.addEventListener('donasi:potong-belanja', tanganiEventPotongBelanja)
 
+  // Periksa apakah ada instruksi potong belanja dari layar Tabungan Donasi
+  const prefillTersimpan = sessionStorage.getItem('pos_prefill_donasi')
+  if (prefillTersimpan) {
+    try {
+      const dataPrefill = JSON.parse(prefillTersimpan)
+      sessionStorage.removeItem('pos_prefill_donasi')
+      tanganiPotongBelanjaDariDonasi(dataPrefill)
+    } catch (e) {
+      console.warn('Gagal membaca pos_prefill_donasi:', e)
+    }
+  }
+
   await muatProdukLokal()
   await shiftStore.muatShiftAktif(authStore.idPengguna)
 
@@ -562,8 +574,11 @@ function transaksiBaru() {
                 <span v-if="produk.kategori" class="kategori-sub">• {{ produk.kategori }}</span>
               </div>
 
-              <!-- Baris Harga: Sendiri di Bawah, Jelas, & Tidak Terpotong -->
-              <div class="harga-produk font-angka">{{ formatRupiah(produk.harga) }}</div>
+              <!-- Baris Bawah: Harga & Tombol Order Khas Bubble POS -->
+              <div class="baris-bawah-kartu">
+                <div class="harga-produk font-angka">{{ formatRupiah(produk.harga) }}</div>
+                <button type="button" class="btn-order-kartu">Order</button>
+              </div>
             </div>
           </div>
 
@@ -853,9 +868,10 @@ function transaksiBaru() {
   transition: all 0.15s ease;
 }
 .tab-item-responsif.aktif {
-  background: #0f172a;
+  background: #ff6b00;
   color: #ffffff;
-  border-color: #0f172a;
+  border-color: #ff6b00;
+  box-shadow: 0 2px 8px rgba(255, 107, 0, 0.28);
 }
 .badge-tab-nav {
   padding: 2px 7px;
@@ -866,7 +882,7 @@ function transaksiBaru() {
   color: #475569;
 }
 .tab-item-responsif.aktif .badge-tab-nav {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
   color: #ffffff;
 }
 
@@ -936,18 +952,19 @@ function transaksiBaru() {
   font-size: 0.8rem;
 }
 .btn-shift-aksi {
-  background: #0f172a;
+  background: #ff6b00;
   color: #ffffff;
   border: none;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.8rem;
-  padding: 5px 12px;
-  border-radius: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(255, 107, 0, 0.2);
 }
 .btn-shift-aksi:hover {
-  background: #1e293b;
+  background: #ea580c;
 }
 
 .banner-shift-aktif {
@@ -956,8 +973,8 @@ function transaksiBaru() {
   justify-content: space-between;
   gap: 12px;
   padding: 6px 14px;
-  background: #f8fafc;
-  border: 1px solid var(--warna-batas);
+  background: #ffffff;
+  border: 1.5px solid #f1f5f9;
   border-radius: var(--radius-md);
   font-size: 0.825rem;
 }
@@ -994,7 +1011,7 @@ function transaksiBaru() {
   border-color: #fca5a5;
 }
 
-/* Bar Pencarian */
+/* Bar Pencarian Khas Bubble POS */
 .bar-pencarian {
   display: flex;
   gap: 8px;
@@ -1007,24 +1024,30 @@ function transaksiBaru() {
 }
 .ikon-scan {
   position: absolute;
-  left: 14px;
+  left: 16px;
   color: #94a3b8;
   pointer-events: none;
 }
 .input-scan {
-  padding-left: 42px;
+  padding-left: 44px;
   padding-right: 36px;
   font-size: 0.925rem;
-  height: 42px;
-  border-radius: var(--radius-md);
+  height: 44px;
+  border-radius: 9999px;
   background: #ffffff;
-  border: 1px solid var(--warna-batas);
+  border: 1.5px solid #cbd5e1;
   color: var(--warna-teks-utama);
   font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+.input-scan:focus {
+  border-color: #2563eb;
+  outline: none;
+  box-shadow: 0 0 0 1px #2563eb;
 }
 .btn-bersih-cari {
   position: absolute;
-  right: 12px;
+  right: 14px;
   background: none;
   border: none;
   color: #94a3b8;
@@ -1049,44 +1072,46 @@ function transaksiBaru() {
 /* Filter Kategori Chips */
 .filter-kategori {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   overflow-x: auto;
-  padding-bottom: 2px;
+  padding-bottom: 4px;
 }
 .pill-kategori {
   display: flex;
   align-items: center;
-  padding: 6px 14px;
+  padding: 8px 16px;
   background: #ffffff;
-  border: 1px solid var(--warna-batas);
-  border-radius: 9999px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
   color: #475569;
-  font-size: 0.825rem;
-  font-weight: 500;
+  font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.15s ease;
+  transition: all 0.18s ease;
   text-transform: capitalize;
 }
 .pill-kategori:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
 }
 .pill-kategori.aktif {
-  background: #0f172a;
+  background: #2563eb;
   color: #ffffff;
-  border-color: #0f172a;
-  font-weight: 600;
+  border-color: #2563eb;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-/* Grid Card Produk Responsif & Rapi */
+/* Grid Card Produk Responsif */
 .grid-produk {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+  gap: 14px;
   overflow-y: auto;
   padding-right: 4px;
-  padding-bottom: 12px;
+  padding-bottom: 14px;
   flex: 1;
   align-content: start;
 }
@@ -1094,23 +1119,23 @@ function transaksiBaru() {
 .card-produk {
   background: #ffffff;
   border: 1.5px solid #e2e8f0;
-  border-radius: var(--radius-md);
-  padding: 10px;
+  border-radius: 16px;
+  padding: 12px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  transition: all 0.15s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   position: relative;
   user-select: none;
 }
 .card-produk:hover {
-  border-color: #0f172a;
+  border-color: #2563eb;
   transform: translateY(-2px);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.07);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 .card-produk:active {
-  transform: translateY(0);
+  transform: translateY(-1px);
 }
 .card-produk.stok-kosong {
   opacity: 0.55;
@@ -1120,15 +1145,15 @@ function transaksiBaru() {
 .wadah-foto-produk {
   width: 100%;
   aspect-ratio: 4 / 3;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f8fafc;
+  background: #f1f5f9;
   position: relative;
-  border: 1px solid #f1f5f9;
+  border: 1px solid #e2e8f0;
 }
 
 .foto-kartu-pos {
@@ -1144,7 +1169,7 @@ function transaksiBaru() {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 10px;
   transition: all 0.2s ease;
 }
 .huruf-kategori-pos {
@@ -1160,7 +1185,7 @@ function transaksiBaru() {
   font-size: 0.68rem;
   font-weight: 700;
   padding: 2px 7px;
-  border-radius: 4px;
+  border-radius: 6px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 .badge-stok-overlay.habis {
@@ -1182,14 +1207,14 @@ function transaksiBaru() {
 
 .nama-produk {
   font-weight: 700;
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   color: #0f172a;
   line-height: 1.35;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: 2.35rem;
+  min-height: 2.45rem;
   margin-bottom: 4px;
   word-break: break-word;
 }
@@ -1224,14 +1249,40 @@ function transaksiBaru() {
   text-transform: capitalize;
 }
 
+.baris-bawah-kartu {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
 .harga-produk {
-  font-size: 1.05rem;
+  font-size: 1.08rem;
   font-weight: 900;
-  color: #0f172a;
+  color: #2563eb;
   font-family: var(--font-angka);
   white-space: nowrap;
-  margin-top: auto;
   line-height: 1.2;
+}
+
+.btn-order-kartu {
+  background: #ffffff;
+  border: 1.5px solid #2563eb;
+  color: #2563eb;
+  border-radius: 9999px;
+  padding: 3px 12px;
+  font-size: 0.775rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+
+.btn-order-kartu:hover,
+.card-produk:hover .btn-order-kartu {
+  background: #2563eb;
+  color: #ffffff;
 }
 
 @media (max-width: 1200px) {
@@ -1280,19 +1331,19 @@ function transaksiBaru() {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 16px;
+  padding: 18px;
   background: #ffffff;
-  border: 1px solid var(--warna-batas);
+  border: 1.5px solid #e2e8f0;
   border-radius: var(--radius-lg);
-  box-shadow: var(--bayangan-kartu);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .header-keranjang {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--warna-batas);
+  padding-bottom: 14px;
+  border-bottom: 1.5px solid #f1f5f9;
 }
 
 .judul-wrap {
@@ -1301,15 +1352,16 @@ function transaksiBaru() {
   gap: 8px;
 }
 .judul-keranjang {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--warna-teks-utama);
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f172a;
 }
 .badge-hitung-item {
   font-size: 0.75rem;
-  font-weight: 600;
-  background: #f1f5f9;
-  color: #475569;
+  font-weight: 700;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
   padding: 2px 8px;
   border-radius: 9999px;
 }
@@ -1323,9 +1375,9 @@ function transaksiBaru() {
   align-items: center;
   gap: 4px;
   font-size: 0.775rem;
-  font-weight: 500;
+  font-weight: 600;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: 6px;
   transition: all 0.15s ease;
 }
 .btn-kosongkan-minimal:hover {
@@ -1359,11 +1411,12 @@ function transaksiBaru() {
   align-items: center;
   gap: 8px;
   padding: 10px 4px;
-  border-bottom: 1px solid #f8fafc;
+  border-bottom: 1px solid #f1f5f9;
   transition: background 0.15s ease;
 }
 .baris-item:hover {
   background: #f8fafc;
+  border-radius: 8px;
 }
 .item-detail {
   flex: 1.2;
@@ -1371,7 +1424,7 @@ function transaksiBaru() {
 }
 .item-nama {
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--warna-teks-utama);
   white-space: nowrap;
   overflow: hidden;
@@ -1397,46 +1450,49 @@ function transaksiBaru() {
 }
 .item-harga-satuan {
   font-size: 0.775rem;
-  color: #475569;
-  font-weight: 600;
+  color: #2563eb;
+  font-weight: 700;
   font-family: var(--font-angka);
 }
 
 .kontrol-qty {
   display: flex;
   align-items: center;
-  border: 1px solid var(--warna-batas);
-  border-radius: 6px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
   overflow: hidden;
+  background: #eff6ff;
 }
 .btn-qty {
-  background: #f8fafc;
+  background: #eff6ff;
   border: none;
   padding: 4px 7px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #475569;
+  color: #2563eb;
+  transition: all 0.15s ease;
 }
 .btn-qty:hover {
-  background: #e2e8f0;
+  background: #dbeafe;
+  color: #1d4ed8;
 }
 .input-qty {
   width: 32px;
   text-align: center;
   background: none;
   border: none;
-  color: var(--warna-teks-utama);
-  font-weight: 700;
+  color: #0f172a;
+  font-weight: 800;
   font-size: 0.85rem;
   font-family: var(--font-angka);
 }
 
 .item-subtotal {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--warna-teks-utama);
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #0f172a;
   font-family: var(--font-angka);
   width: 85px;
   text-align: right;
@@ -1456,12 +1512,12 @@ function transaksiBaru() {
 }
 .btn-hapus-item:hover {
   color: #dc2626;
-  background: #fef2f2;
+  background: #fee2e2;
 }
 
 /* Rincian Biaya Bawah */
 .rincian-biaya {
-  border-top: 1px solid var(--warna-batas);
+  border-top: 1.5px solid #f1f5f9;
   padding-top: 12px;
 }
 
@@ -1475,7 +1531,7 @@ function transaksiBaru() {
 }
 .angka-rincian {
   font-family: var(--font-angka);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--warna-teks-utama);
 }
 
@@ -1506,15 +1562,15 @@ function transaksiBaru() {
   color: #64748b;
 }
 .nominal-diskon {
-  font-weight: 600;
-  color: #d97706;
+  font-weight: 700;
+  color: #2563eb;
 }
 
 .baris-tabungan-donasi {
-  background: #f0fdf4;
+  background: #eff6ff;
   padding: 6px 10px;
-  border-radius: 6px;
-  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  border: 1px solid #bfdbfe;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1522,8 +1578,9 @@ function transaksiBaru() {
   margin-bottom: 6px;
 }
 .nominal-tabungan-siap {
-  color: #15803d;
+  color: #2563eb;
   font-family: var(--font-angka);
+  font-weight: 800;
   margin-left: 6px;
 }
 .btn-batal-tabungan {
@@ -1541,77 +1598,85 @@ function transaksiBaru() {
 .btn-tautkan-tabungan {
   width: 100%;
   background: none;
-  border: 1px dashed var(--warna-batas);
-  color: #475569;
+  border: 1.5px dashed #bfdbfe;
+  color: #1e40af;
   font-size: 0.775rem;
-  font-weight: 500;
-  padding: 5px 8px;
-  border-radius: 6px;
+  font-weight: 700;
+  padding: 6px 8px;
+  border-radius: 8px;
   cursor: pointer;
+  background: #f8fafc;
+  transition: all 0.15s ease;
 }
 .btn-tautkan-tabungan:hover {
-  background: #f8fafc;
-  border-color: #94a3b8;
-  color: #0f172a;
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #2563eb;
 }
 
 .kotak-total-besar {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  padding: 10px 0;
-  margin: 6px 0 12px 0;
-  border-top: 1px dashed var(--warna-batas);
+  padding: 12px 0;
+  margin: 6px 0 14px 0;
+  border-top: 1.5px dashed #cbd5e1;
 }
 .label-total-besar {
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   color: var(--warna-teks-utama);
 }
 .angka-total-besar {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #0f172a;
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #2563eb;
 }
 
 .tombol-bayar-utama {
   width: 100%;
-  height: 48px;
-  background: #059669;
+  height: 50px;
+  background: #2563eb;
   color: #ffffff;
-  border: none;
+  border: 1px solid #1d4ed8;
   border-radius: var(--radius-md);
-  font-weight: 700;
-  font-size: 1rem;
+  font-weight: 800;
+  font-size: 1.05rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 18px;
-  transition: all 0.15s ease;
+  padding: 0 20px;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 .tombol-bayar-utama:hover:not(:disabled) {
-  background: #047857;
+  background: #1d4ed8;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
 }
 .tombol-bayar-utama:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .tombol-buka-shift-utama {
   width: 100%;
-  height: 44px;
-  background: #0f172a;
+  height: 46px;
+  background: #2563eb;
   color: #ffffff;
-  border: none;
+  border: 1px solid #1d4ed8;
   border-radius: var(--radius-md);
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-weight: 700;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 .tombol-buka-shift-utama:hover {
-  background: #1e293b;
+  background: #1d4ed8;
 }
 
 /* Tablet & Mobile Buttons */
@@ -1621,12 +1686,13 @@ function transaksiBaru() {
 @media (max-width: 1024px) {
   .btn-kembali-katalog-mobile {
     display: inline-block;
-    padding: 4px 10px;
-    background: #f1f5f9;
-    border: 1px solid var(--warna-batas);
-    border-radius: 6px;
-    font-size: 0.775rem;
-    font-weight: 600;
+    padding: 6px 12px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
     cursor: pointer;
   }
 }
@@ -1641,13 +1707,13 @@ function transaksiBaru() {
     bottom: 12px;
     left: 12px;
     right: 12px;
-    background: #0f172a;
+    background: #2563eb;
     color: #ffffff;
-    padding: 10px 16px;
-    border-radius: 12px;
+    padding: 12px 18px;
+    border-radius: 14px;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
     z-index: 99;
     cursor: pointer;
   }
@@ -1657,24 +1723,24 @@ function transaksiBaru() {
     gap: 8px;
   }
   .badge-melayang-qty {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.22);
     padding: 2px 8px;
     border-radius: 9999px;
     font-size: 0.75rem;
-    font-weight: 600;
+    font-weight: 800;
   }
   .total-melayang {
-    font-size: 1rem;
-    font-weight: 700;
+    font-size: 1.05rem;
+    font-weight: 800;
   }
   .btn-buka-keranjang-melayang {
     background: #ffffff;
-    color: #0f172a;
+    color: #2563eb;
     border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 0.8rem;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 0.825rem;
   }
 }
 </style>

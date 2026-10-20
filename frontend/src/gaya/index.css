@@ -1,57 +1,58 @@
-/* ===== Kasirku - Minimalist & Professional POS Theme (Square / Shopify POS Style) ===== */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap');
+/* ===== Kasirku - Aesthetic Blue & Pure White Theme (No Glow, Clean & Responsive) ===== */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700;800&display=swap');
 
 :root {
-  /* Latar Belakang & Panel: Bersih, Netral, Tidak Silau & Fokus */
-  --warna-latar: #f8fafc;          /* Canvas netral slate halus */
-  --warna-latar-sub: #f1f5f9;      /* Background sekunder */
-  --warna-kartu: #ffffff;          /* Surface putih bersih */
-  --warna-kartu-atas: #f8fafc;     /* Header tabel / baris */
-  --warna-kartu-hover: #f1f5f9;    /* Hover halus */
-  --warna-batas: #e2e8f0;          /* Border halus minimalis */
+  /* Latar Belakang & Panel: Perpaduan Bersih Biru Aestetik & Putih */
+  --warna-latar: #f8fafc;          /* Canvas soft white-slate yang tenang dan sejuk di mata */
+  --warna-latar-sub: #f1f5f9;      /* Background sekunder halus */
+  --warna-kartu: #ffffff;          /* Surface putih murni */
+  --warna-kartu-atas: #ffffff;     /* Header tabel / baris */
+  --warna-kartu-hover: #f1f5f9;    /* Hover sejuk */
+  --warna-batas: #e2e8f0;          /* Border halus slate */
   --warna-batas-terang: #cbd5e1;   /* Border kontras sedang */
-  --warna-batas-fokus: #0f172a;    /* Fokus input tegas */
+  --warna-batas-fokus: #2563eb;    /* Fokus input biru aestetik tegas tanpa glow */
   
-  /* Tipografi Berkelas & Kontras Tinggi */
-  --warna-teks-utama: #0f172a;     /* Slate gelap pekat - tajam & mudah dibaca */
+  /* Tipografi Tajam & Nyaman Dibaca */
+  --warna-teks-utama: #0f172a;     /* Deep slate pekat kontras tinggi */
   --warna-teks-redup: #475569;     /* Slate menengah untuk deskripsi */
-  --warna-teks-pudar: #94a3b8;     /* Label pendukung */
+  --warna-teks-pudar: #64748b;     /* Label pendukung */
 
-  /* Warna Aksi Fungsional (Solid & Profesional, Bukan Gradien Silau) */
-  --warna-primer: #0f172a;         /* Slate Hitam Elegan (Khas Square / Shopify POS) */
-  --warna-primer-hover: #1e293b;
-  --warna-primer-soft: #f1f5f9;
-  --warna-primer-border: #cbd5e1;
+  /* Warna Utama: Aesthetic Blue (Tenang & Elegan) */
+  --warna-primer: #2563eb;         /* Biru Aestetik Elegan */
+  --warna-primer-hover: #1d4ed8;   /* Biru Gelap saat Hover */
+  --warna-primer-soft: #eff6ff;    /* Tint Biru Lembut Sejuk di Mata */
+  --warna-primer-border: #bfdbfe;  /* Border Biru Lembut */
 
-  --warna-aksen: #2563eb;          /* Biru Profesional untuk Status / Highlight */
-  --warna-aksen-hover: #1d4ed8;
-  --warna-aksen-soft: #eff6ff;
-  --warna-aksen-border: #bfdbfe;
+  --warna-aksen: #0284c7;          /* Aksen Ocean Sky Blue */
+  --warna-aksen-hover: #0369a1;
+  --warna-aksen-soft: #f0f9ff;
+  --warna-aksen-border: #bae6fd;
 
-  --warna-sukses: #059669;         /* Hijau Zamrud - Kas / Bayar / Sukses */
-  --warna-sukses-hover: #047857;
+  --warna-sukses: #10b981;         /* Emerald */
+  --warna-sukses-hover: #059669;
   --warna-sukses-soft: #ecfdf5;
   --warna-sukses-border: #a7f3d0;
 
-  --warna-peringatan: #d97706;     /* Amber Tenang - Peringatan / Diskon */
+  --warna-peringatan: #f59e0b;     /* Amber */
   --warna-peringatan-soft: #fffbeb;
   --warna-peringatan-border: #fde68a;
 
-  --warna-bahaya: #dc2626;         /* Merah Bersih - Hapus / Void / Batal */
-  --warna-bahaya-hover: #b91c1c;
+  --warna-bahaya: #ef4444;         /* Merah Bersih */
+  --warna-bahaya-hover: #dc2626;
   --warna-bahaya-soft: #fef2f2;
   --warna-bahaya-border: #fecaca;
 
   --font-utama: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-angka: 'JetBrains Mono', monospace;
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
-  --bayangan-kartu: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  /* Bayangan Bersih & Alami Tanpa Efek Glow */
+  --bayangan-kartu: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
   --bayangan-tombol: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --transisi-halus: all 0.15s ease-in-out;
+  --transisi-halus: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -114,45 +115,50 @@ body {
 
 /* Variasi Tombol Solid */
 .tombol-primer {
-  background: #0f172a;
+  background: #2563eb;
   color: #ffffff;
+  border: 1px solid #1d4ed8;
+  box-shadow: var(--bayangan-tombol);
 }
 .tombol-primer:hover:not(:disabled) {
-  background: #1e293b;
+  background: #1d4ed8;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
 }
 
 .tombol-sukses {
-  background: #059669;
+  background: #10b981;
   color: #ffffff;
 }
 .tombol-sukses:hover:not(:disabled) {
-  background: #047857;
+  background: #059669;
 }
 
 .tombol-bahaya {
-  background: #dc2626;
+  background: #ef4444;
   color: #ffffff;
 }
 .tombol-bahaya:hover:not(:disabled) {
-  background: #b91c1c;
+  background: #dc2626;
 }
 
 .tombol-peringatan {
-  background: #d97706;
+  background: #f59e0b;
   color: #ffffff;
 }
 .tombol-peringatan:hover:not(:disabled) {
-  background: #b45309;
+  background: #d97706;
 }
 
 .tombol-sekunder {
   background: #ffffff;
-  border: 1px solid var(--warna-batas);
-  color: var(--warna-teks-utama);
+  border: 1.5px solid #e2e8f0;
+  color: #334155;
 }
 .tombol-sekunder:hover:not(:disabled) {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #1d4ed8;
 }
 
 .tombol-sm {
@@ -167,14 +173,14 @@ body {
   font-weight: 800;
 }
 
-/* Input Form Bersih & Minimalis */
+/* Input Form Bersih & Minimalis (Tanpa Efek Glow) */
 .input-teks, .input-pilihan {
   width: 100%;
   padding: 10px 14px;
   font-size: 0.95rem;
   font-weight: 500;
   border-radius: var(--radius-md);
-  border: 1px solid var(--warna-batas);
+  border: 1.5px solid #cbd5e1;
   background: #ffffff;
   color: var(--warna-teks-utama);
   font-family: var(--font-utama);
@@ -186,9 +192,10 @@ body {
   font-weight: 400;
 }
 .input-teks:focus, .input-pilihan:focus {
-  border-color: #0f172a;
+  border-color: #2563eb;
   background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
+  outline: none;
+  box-shadow: 0 0 0 1px #2563eb;
 }
 
 /* Panel & Kartu Minimalis */
@@ -305,6 +312,68 @@ body {
 .teks-peringatan { color: var(--warna-peringatan); }
 .teks-primer { color: var(--warna-primer); }
 .teks-redup { color: var(--warna-teks-redup); }
+
+/* Grid Form Standard */
+.grid-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* Responsivitas Layar Tablet & Ponsel Pintar */
+@media (max-width: 768px) {
+  .halaman-transaksi,
+  .halaman-produk,
+  .halaman-stok,
+  .halaman-laporan,
+  .halaman-pengaturan,
+  .halaman-donasi {
+    padding: 12px 14px !important;
+  }
+
+  .panel-kartu {
+    padding: 14px !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  .judul-halaman,
+  .judul-layar {
+    font-size: 1.25rem !important;
+  }
+
+  .header-transaksi,
+  .header-produk,
+  .header-stok,
+  .header-laporan,
+  .header-pengaturan,
+  .header-halaman-donasi {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    padding-bottom: 14px !important;
+  }
+
+  .header-info,
+  .info-header-kiri {
+    width: 100%;
+  }
+
+  .aksi-header-kanan {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .grid-form {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+
+  .kotak-modal {
+    max-width: 100% !important;
+    margin: 8px !important;
+    border-radius: var(--radius-lg) !important;
+  }
+}
 
 /* Gaya Cetak Struk Kasir Thermal (58mm / 80mm) */
 @media print {

@@ -62,6 +62,9 @@ function unduhCSV(tipe) {
       <!-- Header Laporan -->
       <div class="header-laporan">
         <div class="header-info">
+          <div class="ikon-header">
+            <BarChart3 :size="26" />
+          </div>
           <div>
             <h1 class="judul-halaman">Laporan Bisnis & Analitik Penjualan</h1>
             <p class="sub-halaman">Ringkasan pendapatan omzet toko, performa kasir, produk terlaris, dan audit transaksi.</p>
@@ -329,12 +332,12 @@ function unduhCSV(tipe) {
   width: 52px;
   height: 52px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  background: #2563eb;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.25);
+  box-shadow: none;
 }
 
 .judul-halaman {
@@ -355,10 +358,10 @@ function unduhCSV(tipe) {
   align-items: center;
   gap: 8px;
   padding: 10px 18px;
-  background: #f0fdf4;
-  border: 1.5px solid #86efac;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
   border-radius: var(--radius-md);
-  color: #15803d;
+  color: #475569;
   font-weight: 700;
   font-size: 0.9rem;
   cursor: pointer;
@@ -366,23 +369,27 @@ function unduhCSV(tipe) {
 }
 
 .tombol-ekspor:hover {
-  background: #dcfce7;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
 }
 
 .tombol-perbarui {
   padding: 10px 18px;
-  background: #1e3a8a;
-  border: none;
+  background: #2563eb;
+  border: 1px solid #1d4ed8;
   border-radius: var(--radius-md);
   color: #ffffff;
   font-weight: 700;
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .tombol-perbarui:hover {
   background: #1d4ed8;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 /* KPI Cards with High Contrast & Color Coding */

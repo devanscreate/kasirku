@@ -178,3 +178,24 @@ kasirku/
 ├── PRD — Aplikasi POS Ringan & Offline-First.md
 └── README.md                      # Dokumentasi lengkap proyek
 ```
+
+
+# How to run this program
+
+Turn on virtual environment
+
+```bash
+.\venv\Scripts\Activate.ps1
+```
+
+Turn on backend with 
+```bash
+cd backend
+uvicorn app.utama:aplikasi --reload --port 8000
+```
+
+Turn on frontend with 
+
+```bash
+cd frontend
+pnpm run dev

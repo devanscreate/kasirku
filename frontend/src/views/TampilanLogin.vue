@@ -144,15 +144,16 @@ function isiCepat(peran) {
   margin-bottom: 28px;
 }
 .ikon-logo {
-  width: 56px;
-  height: 56px;
-  background: #0f172a;
+  width: 60px;
+  height: 60px;
+  background: #2563eb;
   color: white;
-  border-radius: 14px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 14px auto;
+  margin: 0 auto 16px auto;
+  box-shadow: none;
 }
 .judul-aplikasi {
   font-size: 1.6rem;
@@ -210,7 +211,9 @@ function isiCepat(peran) {
 }
 .input-dengan-ikon:focus {
   background: #ffffff;
-  border-color: #0f172a;
+  border-color: #2563eb;
+  outline: none;
+  box-shadow: 0 0 0 1px #2563eb;
 }
 .w-full {
   width: 100%;
@@ -254,8 +257,9 @@ function isiCepat(peran) {
   color: #0f172a;
 }
 .tombol-demo:hover {
-  background: #ffffff;
-  border-color: #0f172a;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
 }
 .demo-kasir, .demo-manajer, .demo-owner {
   background: #f8fafc;
