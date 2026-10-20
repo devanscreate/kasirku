@@ -1,32 +1,32 @@
-/* ===== Kasirku - Aesthetic Blue & Pure White Theme (No Glow, Clean & Responsive) ===== */
+/* ===== Kasirku - Confidency OS Modern SaaS Theme (Clean, Iris & Pure White, No AI Slop) ===== */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700;800&display=swap');
 
 :root {
-  /* Latar Belakang & Panel: Perpaduan Bersih Biru Aestetik & Putih */
-  --warna-latar: #f8fafc;          /* Canvas soft white-slate yang tenang dan sejuk di mata */
-  --warna-latar-sub: #f1f5f9;      /* Background sekunder halus */
-  --warna-kartu: #ffffff;          /* Surface putih murni */
-  --warna-kartu-atas: #ffffff;     /* Header tabel / baris */
-  --warna-kartu-hover: #f1f5f9;    /* Hover sejuk */
-  --warna-batas: #e2e8f0;          /* Border halus slate */
-  --warna-batas-terang: #cbd5e1;   /* Border kontras sedang */
-  --warna-batas-fokus: #2563eb;    /* Fokus input biru aestetik tegas tanpa glow */
+  /* Latar Belakang & Canvas: Clean Soft Neutral & Crisp White */
+  --warna-latar: #f4f5f8;          /* Canvas modern studio yang sejuk dan elegan */
+  --warna-latar-sub: #ebeef3;      /* Secondary background */
+  --warna-kartu: #ffffff;          /* Surface kartu putih murni */
+  --warna-kartu-atas: #fafbfc;     /* Header surface */
+  --warna-kartu-hover: #f8fafc;    /* Hover bersih */
+  --warna-batas: #eaedf2;          /* Border sangat halus dan rapi */
+  --warna-batas-terang: #e2e8f0;   /* Border kontras menengah */
+  --warna-batas-fokus: #6366f1;    /* Aksen fokus Iris / Indigo */
   
-  /* Tipografi Tajam & Nyaman Dibaca */
-  --warna-teks-utama: #0f172a;     /* Deep slate pekat kontras tinggi */
-  --warna-teks-redup: #475569;     /* Slate menengah untuk deskripsi */
-  --warna-teks-pudar: #64748b;     /* Label pendukung */
+  /* Tipografi Tajam & Humanis (Plus Jakarta Sans) */
+  --warna-teks-utama: #0f172a;     /* Deep slate pekat tajam */
+  --warna-teks-redup: #64748b;     /* Slate menengah untuk label dan deskripsi */
+  --warna-teks-pudar: #94a3b8;     /* Muted metadata */
 
-  /* Warna Utama: Aesthetic Blue (Tenang & Elegan) */
-  --warna-primer: #2563eb;         /* Biru Aestetik Elegan */
-  --warna-primer-hover: #1d4ed8;   /* Biru Gelap saat Hover */
-  --warna-primer-soft: #eff6ff;    /* Tint Biru Lembut Sejuk di Mata */
-  --warna-primer-border: #bfdbfe;  /* Border Biru Lembut */
+  /* Warna Utama: Iris / Electric Indigo (Khas Confidency OS) */
+  --warna-primer: #6366f1;         /* Aksen Ungu Iris Elegan */
+  --warna-primer-hover: #4f46e5;   /* Deep Iris saat Hover */
+  --warna-primer-soft: #eef2ff;    /* Tint Lavender / Iris Lembut */
+  --warna-primer-border: #c7d2fe;  /* Border Iris Halus */
 
-  --warna-aksen: #0284c7;          /* Aksen Ocean Sky Blue */
-  --warna-aksen-hover: #0369a1;
-  --warna-aksen-soft: #f0f9ff;
-  --warna-aksen-border: #bae6fd;
+  --warna-aksen: #6366f1;
+  --warna-aksen-hover: #4f46e5;
+  --warna-aksen-soft: #f5f3ff;
+  --warna-aksen-border: #ddd6fe;
 
   --warna-sukses: #10b981;         /* Emerald */
   --warna-sukses-hover: #059669;
@@ -37,7 +37,7 @@
   --warna-peringatan-soft: #fffbeb;
   --warna-peringatan-border: #fde68a;
 
-  --warna-bahaya: #ef4444;         /* Merah Bersih */
+  --warna-bahaya: #ef4444;         /* Rose Red */
   --warna-bahaya-hover: #dc2626;
   --warna-bahaya-soft: #fef2f2;
   --warna-bahaya-border: #fecaca;
@@ -46,13 +46,12 @@
   --font-angka: 'JetBrains Mono', monospace;
 
   --radius-sm: 8px;
-  --radius-md: 12px;
+  --radius-md: 10px;
   --radius-lg: 16px;
   --radius-xl: 20px;
-  /* Bayangan Bersih & Alami Tanpa Efek Glow */
-  --bayangan-kartu: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --bayangan-kartu: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
   --bayangan-tombol: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --transisi-halus: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  --transisi-halus: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -115,13 +114,13 @@ body {
 
 /* Variasi Tombol Solid */
 .tombol-primer {
-  background: #2563eb;
+  background: #6366f1;
   color: #ffffff;
-  border: 1px solid #1d4ed8;
+  border: 1px solid #4f46e5;
   box-shadow: var(--bayangan-tombol);
 }
 .tombol-primer:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: #4f46e5;
   box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.08);
   transform: translateY(-1px);
 }
@@ -156,9 +155,9 @@ body {
   color: #334155;
 }
 .tombol-sekunder:hover:not(:disabled) {
-  background: #eff6ff;
-  border-color: #2563eb;
-  color: #1d4ed8;
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
 }
 
 .tombol-sm {
@@ -167,10 +166,10 @@ body {
   border-radius: var(--radius-sm);
 }
 .tombol-lg {
-  padding: 16px 26px;
-  font-size: 1.15rem;
-  border-radius: var(--radius-lg);
-  font-weight: 800;
+  padding: 14px 24px;
+  font-size: 1.05rem;
+  border-radius: var(--radius-md);
+  font-weight: 700;
 }
 
 /* Input Form Bersih & Minimalis (Tanpa Efek Glow) */
@@ -192,10 +191,10 @@ body {
   font-weight: 400;
 }
 .input-teks:focus, .input-pilihan:focus {
-  border-color: #2563eb;
+  border-color: #6366f1;
   background: #ffffff;
   outline: none;
-  box-shadow: 0 0 0 1px #2563eb;
+  box-shadow: 0 0 0 1px #6366f1;
 }
 
 /* Panel & Kartu Minimalis */

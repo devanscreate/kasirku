@@ -65,24 +65,57 @@ export const useKeranjangStore = defineStore('keranjang', () => {
     return itemKeranjang.value.reduce((total, it) => total + it.kuantitas, 0)
   })
 
-  // F-04: Tambah Produk ke Keranjang (Scan / Pilih)
+  // F-04: Tambah Produk ke Keranjang dengan Validasi Stok
   function tambahItem(produk, kuantitas = 1) {
+    const stokTersedia = Number(produk.stok !== undefined ? produk.stok : (produk.stok_tersedia || 0))
+    
+    // 1. Jika stok awal barang sudah habis (<= 0), tolak penambahan
+    if (stokTersedia <= 0) {
+      return { 
+        sukses: false, 
+        alasan: 'habis',
+        pesan: `Stok produk "${produk.nama}" sudah habis!` 
+      }
+    }
+
     const indeks = itemKeranjang.value.findIndex(it => it.id === produk.id)
     if (indeks > -1) {
-      itemKeranjang.value[indeks].kuantitas += kuantitas
+      const it = itemKeranjang.value[indeks]
+      const totalBaru = it.kuantitas + kuantitas
+      // 2. Jika kuantitas melebihi stok fisik toko, tolak penambahan
+      if (totalBaru > stokTersedia) {
+        return { 
+          sukses: false, 
+          alasan: 'melebihi_stok',
+          pesan: `Stok "${produk.nama}" tidak mencukupi! Tersisa ${stokTersedia} unit (sudah ada ${it.kuantitas} di keranjang).` 
+        }
+      }
+      it.kuantitas = totalBaru
+      it.stok = stokTersedia
+      it.stok_tersedia = stokTersedia
     } else {
+      if (kuantitas > stokTersedia) {
+        return { 
+          sukses: false, 
+          alasan: 'melebihi_stok',
+          pesan: `Stok "${produk.nama}" tidak mencukupi! Hanya tersedia ${stokTersedia} unit.` 
+        }
+      }
       itemKeranjang.value.push({
         id: produk.id,
         sku: produk.sku,
         barcode: produk.barcode,
         nama: produk.nama,
+        foto: produk.foto || null,
         harga: produk.harga,
         harga_modal: produk.harga_modal || 0,
         kuantitas: kuantitas,
-        stok_tersedia: produk.stok
+        stok: stokTersedia,
+        stok_tersedia: stokTersedia
       })
     }
     simpanDraft()
+    return { sukses: true }
   }
 
   function kurangiItem(idProduk) {
@@ -100,10 +133,29 @@ export const useKeranjangStore = defineStore('keranjang', () => {
   function ubahKuantitas(idProduk, jumlah) {
     const indeks = itemKeranjang.value.findIndex(it => it.id === idProduk)
     if (indeks > -1) {
-      const qtyBersih = Math.max(1, parseInt(jumlah, 10) || 1)
-      itemKeranjang.value[indeks].kuantitas = qtyBersih
+      const it = itemKeranjang.value[indeks]
+      const stokTersedia = Number(it.stok !== undefined ? it.stok : (it.stok_tersedia || 999999))
+      const qtyBersih = parseInt(jumlah, 10) || 0
+
+      if (qtyBersih > stokTersedia) {
+        it.kuantitas = stokTersedia
+        simpanDraft()
+        return { 
+          sukses: false, 
+          alasan: 'melebihi_stok',
+          pesan: `Maksimal kuantitas adalah stok yang tersedia (${stokTersedia} unit).` 
+        }
+      }
+
+      if (qtyBersih > 0) {
+        it.kuantitas = qtyBersih
+      } else {
+        itemKeranjang.value.splice(indeks, 1)
+      }
       simpanDraft()
+      return { sukses: true }
     }
+    return { sukses: false, pesan: 'Produk tidak ditemukan di keranjang' }
   }
 
   function hapusItem(idProduk) {

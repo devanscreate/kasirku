@@ -26,12 +26,22 @@ const props = defineProps({
   prefillPotongDonasi: {
     type: Object,
     default: null
+  },
+  metodeAwal: {
+    type: String,
+    default: 'tunai'
   }
 })
 
 const emit = defineEmits(['tutup', 'bayar'])
 
-const metode = ref('tunai') // 'tunai' | 'qris' | 'transfer'
+const metode = ref(props.metodeAwal || 'tunai') // 'tunai' | 'qris' | 'transfer'
+
+watch(() => props.metodeAwal, (baru) => {
+  if (baru) {
+    metode.value = baru
+  }
+})
 const pesanError = ref('')
 
 const formatRupiah = (val) => 'Rp ' + Number(val || 0).toLocaleString('id-ID')

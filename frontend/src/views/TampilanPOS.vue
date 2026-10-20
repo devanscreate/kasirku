@@ -36,13 +36,60 @@ import {
   ArrowLeft,
   HeartHandshake,
   Gift,
-  Coins
+  Coins,
+  Banknote,
+  Split
 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const shiftStore = useShiftStore()
 const keranjangStore = useKeranjangStore()
 const koneksiStore = useKoneksiStore()
+
+// Pilihan Metode Bayar Cepat ala Confidency OS (Card / Cash / Split)
+const metodeBayarPOS = ref('cash')
+
+function pilihMetodeSplitDonasi() {
+  metodeBayarPOS.value = 'split'
+  if (!prefillPotongDonasiAktif.value) {
+    tampilModalDonasiPelanggan.value = true
+  }
+}
+
+function jumlahDiKeranjang(idProduk) {
+  const item = keranjangStore.itemKeranjang.find(it => it.id === idProduk)
+  return item ? item.kuantitas : 0
+}
+
+// Menghitung sisa stok barang yang masih bisa diambil ke keranjang
+function sisaStokTersedia(produk) {
+  const diKeranjang = jumlahDiKeranjang(produk.id)
+  return Math.max(0, Number(produk.stok || 0) - diKeranjang)
+}
+
+const pesanPeringatanStok = ref('')
+let timerPeringatanStok = null
+
+function tampilkanPeringatanStok(pesan) {
+  pesanPeringatanStok.value = pesan
+  if (timerPeringatanStok) clearTimeout(timerPeringatanStok)
+  timerPeringatanStok = setTimeout(() => {
+    pesanPeringatanStok.value = ''
+  }, 3500)
+}
+
+function tambahKuantitasDariKeranjang(it) {
+  const prod = daftarProduk.value.find(p => p.id === it.id) || it
+  const stokMaks = Number(prod.stok !== undefined ? prod.stok : (it.stok || 0))
+  if (it.kuantitas >= stokMaks) {
+    tampilkanPeringatanStok(`Kuantitas "${it.nama}" sudah mencapai batas stok (${stokMaks} unit).`)
+    return
+  }
+  const hasil = keranjangStore.tambahItem(prod, 1)
+  if (hasil && !hasil.sukses) {
+    tampilkanPeringatanStok(hasil.pesan)
+  }
+}
 
 const inputCari = ref(null)
 const teksPencarian = ref('')
@@ -95,6 +142,12 @@ function tanganiPotongBelanjaDariDonasi({ nomorHp, namaPelanggan, saldoMaksimal 
 
 function tanganiKlikBayarPOS() {
   if (keranjangStore.itemKeranjang.length === 0) return
+
+  // Jika tombol Split dipilih tapi pelanggan belum ditautkan, buka modal donasi
+  if (metodeBayarPOS.value === 'split' && !prefillPotongDonasiAktif.value) {
+    tampilModalDonasiPelanggan.value = true
+    return
+  }
 
   // Jika tagihan sudah 100% lunas dari potongan tabungan donasi pembeli (Rp 0), pembeli tidak membayar
   if (prefillPotongDonasiAktif.value && totalTagihanBersihPOS.value === 0) {
@@ -238,13 +291,32 @@ function bunyikanBeepSukses() {
   }
 }
 
-// Tangani penambahan produk ke keranjang dengan alur shift yang logis
+// Tangani penambahan produk ke keranjang dengan validasi stok ketat
 function tanganiKlikProduk(produk) {
   if (!shiftStore.apakahShiftTerbuka) {
     tampilModalBukaShift.value = true
     return
   }
-  keranjangStore.tambahItem(produk)
+
+  // 1. Cek jika stok memang sudah 0 / habis
+  if (Number(produk.stok || 0) <= 0) {
+    tampilkanPeringatanStok(`Stok barang "${produk.nama}" sudah habis!`)
+    return
+  }
+
+  // 2. Cek apakah sisa stok sudah habis karena sudah ada di keranjang
+  const sisa = sisaStokTersedia(produk)
+  if (sisa <= 0) {
+    tampilkanPeringatanStok(`Jumlah "${produk.nama}" di keranjang sudah mencapai batas stok (${produk.stok} unit).`)
+    return
+  }
+
+  const hasil = keranjangStore.tambahItem(produk)
+  if (hasil && !hasil.sukses) {
+    tampilkanPeringatanStok(hasil.pesan)
+    return
+  }
+
   bunyikanBeepSukses()
   nextTick(() => inputCari.value?.focus())
 }
@@ -262,7 +334,22 @@ async function tanganiInputScanEnter() {
   // 1. Cari exact match barcode atau SKU
   const produkCocok = daftarProduk.value.find(p => p.barcode === kode || p.sku.toLowerCase() === kode.toLowerCase())
   if (produkCocok) {
-    keranjangStore.tambahItem(produkCocok)
+    if (Number(produkCocok.stok || 0) <= 0) {
+      tampilkanPeringatanStok(`Stok barang "${produkCocok.nama}" sudah habis!`)
+      teksPencarian.value = ''
+      return
+    }
+    if (sisaStokTersedia(produkCocok) <= 0) {
+      tampilkanPeringatanStok(`Jumlah "${produkCocok.nama}" di keranjang sudah mencapai batas stok (${produkCocok.stok} unit).`)
+      teksPencarian.value = ''
+      return
+    }
+    const hasil = keranjangStore.tambahItem(produkCocok)
+    if (hasil && !hasil.sukses) {
+      tampilkanPeringatanStok(hasil.pesan)
+      teksPencarian.value = ''
+      return
+    }
     bunyikanBeepSukses()
     teksPencarian.value = ''
     pesanBarcodeTidakDitemukan.value = false
@@ -270,7 +357,23 @@ async function tanganiInputScanEnter() {
   } else {
     // Jika tidak ditemukan dan hanya ada 1 hasil terfilter, pilih produk tersebut
     if (produkTerfilter.value.length === 1) {
-      keranjangStore.tambahItem(produkTerfilter.value[0])
+      const p = produkTerfilter.value[0]
+      if (Number(p.stok || 0) <= 0) {
+        tampilkanPeringatanStok(`Stok barang "${p.nama}" sudah habis!`)
+        teksPencarian.value = ''
+        return
+      }
+      if (sisaStokTersedia(p) <= 0) {
+        tampilkanPeringatanStok(`Jumlah "${p.nama}" di keranjang sudah mencapai batas stok (${p.stok} unit).`)
+        teksPencarian.value = ''
+        return
+      }
+      const hasil = keranjangStore.tambahItem(p)
+      if (hasil && !hasil.sukses) {
+        tampilkanPeringatanStok(hasil.pesan)
+        teksPencarian.value = ''
+        return
+      }
       bunyikanBeepSukses()
       teksPencarian.value = ''
       pesanBarcodeTidakDitemukan.value = false
@@ -323,10 +426,20 @@ function tanganiEventPotongBelanja(e) {
   }
 }
 
+function bukaModalBukaShift() {
+  tampilModalBukaShift.value = true
+}
+
+function bukaModalTutupShift() {
+  tampilModalTutupShift.value = true
+}
+
 onMounted(async () => {
   window.addEventListener('keydown', tanganiPintasanKeyboard)
   window.addEventListener('katalog:diperbarui', muatProdukLokal)
   window.addEventListener('donasi:potong-belanja', tanganiEventPotongBelanja)
+  window.addEventListener('shift:buka', bukaModalBukaShift)
+  window.addEventListener('shift:tutup', bukaModalTutupShift)
 
   // Periksa apakah ada instruksi potong belanja dari layar Tabungan Donasi
   const prefillTersimpan = sessionStorage.getItem('pos_prefill_donasi')
@@ -353,6 +466,8 @@ onUnmounted(() => {
   window.removeEventListener('keydown', tanganiPintasanKeyboard)
   window.removeEventListener('katalog:diperbarui', muatProdukLokal)
   window.removeEventListener('donasi:potong-belanja', tanganiEventPotongBelanja)
+  window.removeEventListener('shift:buka', bukaModalBukaShift)
+  window.removeEventListener('shift:tutup', bukaModalTutupShift)
 })
 
 // Selesaikan transaksi
@@ -423,6 +538,9 @@ async function prosesBayar({ metode, diterima, kembalian, donasi, potonganDonasi
     tampilModalBayar.value = false
     prefillPotongDonasiAktif.value = null
     tampilModalSukses.value = true
+
+    // Segarkan data produk lokal seketika agar sisa stok terbaru langsung ter-update di layar POS
+    await muatProdukLokal()
   } catch (err) {
     alert('Gagal memproses transaksi: ' + err.message)
   }
@@ -431,6 +549,7 @@ async function prosesBayar({ metode, diterima, kembalian, donasi, potonganDonasi
 function transaksiBaru() {
   tampilModalSukses.value = false
   transaksiTerakhir.value = null
+  muatProdukLokal()
   setTimeout(() => {
     inputCari.value?.focus()
   }, 100)
@@ -455,57 +574,52 @@ function transaksiBaru() {
         :class="{ 'aktif': tabAktifMobile === 'keranjang' }"
         @click="tabAktifMobile = 'keranjang'"
       >
-        <span>Keranjang</span>
-        <span v-if="keranjangStore.totalKuantitas > 0" class="badge-tab-nav badge-hijau">
+        <span>Pesanan</span>
+        <span v-if="keranjangStore.totalKuantitas > 0" class="badge-tab-nav badge-aktif">
           {{ keranjangStore.totalKuantitas }}
         </span>
       </button>
     </div>
 
-    <!-- TAMPILAN UTAMA KASIR -->
+    <!-- TAMPILAN UTAMA KASIR ALA CONFIDENCY OS -->
     <div class="grid-pos" :class="`pos-view-${tabAktifMobile}`">
-      <!-- KOLOM KIRI: KATALOG & SCAN BARCODE -->
+      <!-- KOLOM KIRI: KATALOG & FILTER & PENCARIAN -->
       <section class="kolom-katalog">
-        <!-- Banner Status Shift Kasir: Rapi & Minimalis -->
+        <!-- Peringatan jika Shift Belum Dibuka -->
         <div v-if="!shiftStore.apakahShiftTerbuka" class="banner-shift-belum-buka">
           <div class="shift-kiri">
             <span class="titik-kuning"></span>
-            <div>
-              <span class="teks-shift-judul">Shift Kasir Belum Dibuka</span>
-              <span class="teks-shift-sub"> — Masukkan uang modal laci kasir untuk mulai transaksi</span>
-            </div>
+            <span class="teks-shift-judul">Shift Kasir Belum Dibuka — Masukkan uang modal laci kasir untuk mulai transaksi</span>
           </div>
-          <div class="shift-kanan">
-            <button class="btn-shift-aksi" @click="tampilModalBukaShift = true">
-              Buka Shift
-            </button>
-          </div>
+          <button class="btn-shift-aksi" @click="tampilModalBukaShift = true">
+            Buka Shift
+          </button>
         </div>
 
-        <div v-else class="banner-shift-aktif">
-          <div class="shift-kiri">
-            <span class="titik-hijau-shift"></span>
-            <span class="label-kasir-aktif">Kasir: <strong>{{ authStore.namaLengkap }}</strong></span>
-            <span class="pemisah-shift">•</span>
-            <span class="label-modal-laci">Modal Awal: <strong class="font-angka">{{ formatRupiah(shiftStore.shiftAktif?.modal_awal || 0) }}</strong></span>
-          </div>
-          <div class="shift-kanan">
-            <button class="btn-tutup-shift-minimal" @click="tampilModalTutupShift = true" title="Tutup Shift Kasir">
-              Tutup Shift
+        <!-- Bar Kategori Pills + Search Bar Sesuai Mockup Confidency OS -->
+        <div class="bar-kategori-dan-cari">
+          <!-- Kategori Pills Bar (Active = Iris Solid Pill) -->
+          <div class="filter-kategori-pills">
+            <button 
+              v-for="kat in daftarKategori" 
+              :key="kat"
+              class="pill-kategori"
+              :class="{ 'aktif': kategoriDipilih === kat }"
+              @click="kategoriDipilih = kat"
+            >
+              <span>{{ kat === 'semua' ? 'Semua Produk' : kat }}</span>
             </button>
           </div>
-        </div>
 
-        <!-- Bar Pencarian Produk / Scan Barcode -->
-        <div class="bar-pencarian">
-          <div class="input-scan-wrap">
-            <Search :size="18" class="ikon-scan" />
+          <!-- Kotak Pencarian Ramping di Kanan Bar Kategori -->
+          <div class="kotak-cari-pos">
+            <Search :size="15" class="ikon-cari-pos" />
             <input 
               ref="inputCari"
               v-model="teksPencarian"
               type="text"
-              class="input-teks input-scan"
-              placeholder="Cari nama produk, kode SKU, atau scan barcode (F2)..."
+              class="input-cari-pos"
+              placeholder="Cari produk / barcode (F2)..."
               @keydown.enter="tanganiInputScanEnter"
             />
             <button v-if="teksPencarian" class="btn-bersih-cari" @click="teksPencarian = ''">✕</button>
@@ -514,33 +628,34 @@ function transaksiBaru() {
 
         <!-- Banner Peringatan Barcode Tidak Ditemukan -->
         <div v-if="pesanBarcodeTidakDitemukan" class="pesan-tak-ditemukan">
-          <span>Produk dengan barcode atau kode tersebut tidak ditemukan.</span>
+          <span>Produk dengan kode tersebut tidak ditemukan di katalog.</span>
         </div>
 
-        <!-- Kategori Filter Chips Minimalis -->
-        <div class="filter-kategori">
-          <button 
-            v-for="kat in daftarKategori" 
-            :key="kat"
-            class="pill-kategori"
-            :class="{ 'aktif': kategoriDipilih === kat }"
-            @click="kategoriDipilih = kat"
-          >
-            <span>{{ kat === 'semua' ? 'Semua' : kat }}</span>
-          </button>
-        </div>
+        <!-- Banner Peringatan Stok Habis / Melebihi Batas Stok -->
+        <transition name="fade">
+          <div v-if="pesanPeringatanStok" class="banner-peringatan-stok flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <AlertTriangle :size="16" class="ikon-peringatan-stok" />
+              <span>{{ pesanPeringatanStok }}</span>
+            </div>
+            <button type="button" class="btn-tutup-notif-stok" @click="pesanPeringatanStok = ''" title="Tutup peringatan">✕</button>
+          </div>
+        </transition>
 
-        <!-- Grid Card Produk: Minimalis, Bersih, Cepat Diakses -->
+        <!-- Grid Studio Card Produk Sesuai Mockup -->
         <div class="grid-produk">
           <div 
             v-for="produk in produkTerfilter" 
             :key="produk.id"
             class="card-produk"
-            :class="{ 'stok-kosong': produk.stok <= 0 }"
+            :class="{ 
+              'stok-kosong': produk.stok <= 0,
+              'stok-mentok': sisaStokTersedia(produk) <= 0 && produk.stok > 0
+            }"
             @click="tanganiKlikProduk(produk)"
-            title="Klik untuk masukkan ke keranjang"
+            :title="produk.stok <= 0 ? 'Stok produk ini sudah habis' : (sisaStokTersedia(produk) <= 0 ? 'Jumlah di keranjang sudah mencapai batas stok' : 'Klik untuk masukkan ke pesanan')"
           >
-            <!-- Wadah Foto Produk Bersih & Proporsional -->
+            <!-- Wadah Gambar Studio Produk -->
             <div class="wadah-foto-produk">
               <img v-if="produk.foto" :src="produk.foto" :alt="produk.nama" class="foto-kartu-pos" loading="lazy" />
               <div 
@@ -554,30 +669,44 @@ function transaksiBaru() {
                 <span class="huruf-kategori-pos">{{ (produk.nama || 'P').charAt(0).toUpperCase() }}</span>
               </div>
 
-              <!-- Badge Status Stok jika Menipis / Habis saja -->
-              <span 
-                v-if="produk.stok <= 0 || produk.stok <= produk.min_stok"
-                class="badge-stok-overlay"
-                :class="produk.stok <= 0 ? 'habis' : 'menipis'"
-              >
-                {{ produk.stok <= 0 ? 'Habis' : `Sisa ${produk.stok}` }}
+              <!-- Badge Indikator Sudah di Keranjang -->
+              <span v-if="jumlahDiKeranjang(produk.id) > 0" class="badge-di-keranjang font-angka">
+                ✓ {{ jumlahDiKeranjang(produk.id) }}
+              </span>
+
+              <!-- Badge Habis jika stok <= 0 -->
+              <span v-if="produk.stok <= 0" class="badge-stok-habis">
+                Habis
               </span>
             </div>
             
-            <!-- Detail Keterangan Produk: Rapi, Terstruktur, Bebas Tabrakan -->
-            <div class="detail-kartu">
-              <div class="nama-produk" :title="produk.nama">{{ produk.nama }}</div>
+            <!-- Detail Keterangan Produk: Rapi & Minimalis -->
+            <div class="info-kartu-produk">
+              <h3 class="nama-produk" :title="produk.nama">{{ produk.nama }}</h3>
               
-              <!-- Baris Meta: SKU & Kategori -->
-              <div class="meta-sub-kartu font-angka">
-                <span class="sku-teks">{{ produk.sku }}</span>
-                <span v-if="produk.kategori" class="kategori-sub">• {{ produk.kategori }}</span>
-              </div>
-
-              <!-- Baris Bawah: Harga & Tombol Order Khas Bubble POS -->
-              <div class="baris-bawah-kartu">
-                <div class="harga-produk font-angka">{{ formatRupiah(produk.harga) }}</div>
-                <button type="button" class="btn-order-kartu">Order</button>
+              <div class="baris-harga-dan-stok">
+                <span class="harga-produk font-angka">{{ formatRupiah(produk.harga) }}</span>
+                
+                <!-- Tampilan Sisa Jumlah Stok Barang -->
+                <span 
+                  class="badge-info-stok font-angka"
+                  :class="{
+                    'stok-nol': produk.stok <= 0,
+                    'stok-menipis': produk.stok > 0 && sisaStokTersedia(produk) <= (produk.min_stok || 5),
+                    'stok-aman': sisaStokTersedia(produk) > (produk.min_stok || 5)
+                  }"
+                  :title="`Total stok: ${produk.stok} unit`"
+                >
+                  <template v-if="produk.stok <= 0">
+                    Habis
+                  </template>
+                  <template v-else-if="jumlahDiKeranjang(produk.id) > 0">
+                    Sisa {{ sisaStokTersedia(produk) }}
+                  </template>
+                  <template v-else>
+                    Stok {{ produk.stok }}
+                  </template>
+                </span>
               </div>
             </div>
           </div>
@@ -585,183 +714,209 @@ function transaksiBaru() {
           <div v-if="produkTerfilter.length === 0" class="state-kosong">
             <div class="tebal">Produk tidak ditemukan</div>
             <div class="teks-redup">
-              {{ sedangMuatKatalog ? 'Sedang memuat data produk...' : 'Coba periksa kata kunci pencarian atau pilih kategori lain' }}
+              {{ sedangMuatKatalog ? 'Sedang memuat data katalog...' : 'Coba periksa kata kunci pencarian atau pilih kategori lain' }}
             </div>
           </div>
         </div>
       </section>
 
-      <!-- KOLOM KANAN: KERANJANG BELANJA (Clean POS Receipt Style) -->
+      <!-- KOLOM KANAN: PESANAN & CHECKOUT -->
       <aside class="kolom-keranjang">
+        <!-- Header Keranjang: Antrean Pesanan & Tombol Kosongkan -->
         <div class="header-keranjang">
-          <div class="judul-wrap">
-            <h2 class="judul-keranjang">Keranjang</h2>
-            <span class="badge-hitung-item">{{ keranjangStore.totalKuantitas }} item</span>
+          <div class="judul-wrap flex items-center gap-2">
+            <h2 class="judul-keranjang">Antrean Pesanan</h2>
+            <span v-if="keranjangStore.totalKuantitas > 0" class="badge-hitung-pesanan font-angka">
+              {{ keranjangStore.totalKuantitas }} item
+            </span>
           </div>
 
           <div class="flex items-center gap-2">
             <button 
               class="btn-kembali-katalog-mobile"
               @click="tabAktifMobile = 'katalog'"
-              title="Kembali ke pilihan barang"
+              title="Kembali ke katalog"
             >
-              <span>Katalog</span>
+              <span>← Katalog</span>
             </button>
 
             <button 
               v-if="keranjangStore.itemKeranjang.length > 0"
-              class="btn-kosongkan-minimal"
+              class="btn-reset-order"
               @click="keranjangStore.kosongkanKeranjang"
-              title="Kosongkan keranjang"
+              title="Kosongkan seluruh barang dalam pesanan"
             >
-              <Trash2 :size="14" />
+              <Trash2 :size="13" />
               <span>Kosongkan</span>
             </button>
           </div>
         </div>
 
-        <!-- Daftar Baris Item Keranjang -->
+        <!-- Daftar Baris Item Keranjang Sesuai Mockup -->
         <div class="daftar-item-keranjang">
           <div v-if="keranjangStore.itemKeranjang.length === 0" class="keranjang-kosong">
-            <div class="teks-utama">Keranjang Kosong</div>
-            <div class="hint-keranjang">Klik produk di katalog untuk menambahkan pesanan</div>
+            <div class="teks-utama">Belum ada item pesanan</div>
+            <div class="hint-keranjang">Pilih atau scan produk di katalog untuk menambahkan ke pesanan</div>
           </div>
 
           <div 
             v-for="it in keranjangStore.itemKeranjang" 
             :key="it.id"
-            class="baris-item"
+            class="baris-item-pos"
           >
-            <div class="item-detail">
-              <div class="item-nama">{{ it.nama }}</div>
-              <div class="item-meta-baris">
-                <span class="item-kode font-angka">{{ it.sku }}</span>
-                <span class="item-pemisah">•</span>
-                <span class="item-harga-satuan font-angka">{{ formatRupiah(it.harga) }}</span>
+            <!-- Thumbnail Produk Mini -->
+            <div class="thumb-item-keranjang">
+              <img v-if="it.foto" :src="it.foto" :alt="it.nama" class="img-thumb-keranjang" />
+              <div v-else class="thumb-placeholder font-angka">
+                {{ (it.nama || 'P').charAt(0).toUpperCase() }}
               </div>
             </div>
 
-            <div class="kontrol-qty">
-              <button class="btn-qty" @click="keranjangStore.kurangiItem(it.id)" title="Kurangi 1">
-                <Minus :size="13" />
-              </button>
-              <input 
-                :value="it.kuantitas" 
-                type="number"
-                min="1"
-                class="input-qty font-angka"
-                @input="keranjangStore.ubahKuantitas(it.id, $event.target.value)"
-                @change="keranjangStore.ubahKuantitas(it.id, $event.target.value)"
-              />
-              <button class="btn-qty" @click="keranjangStore.tambahItem(it)" title="Tambah 1">
-                <Plus :size="13" />
-              </button>
+            <!-- Detail Tengah: Nama, Harga & Stepper Kuantitas -->
+            <div class="detail-item-tengah">
+              <div class="item-nama" :title="it.nama">{{ it.nama }}</div>
+              <div class="item-meta-baris">
+                <span class="item-harga-satuan font-angka">{{ formatRupiah(it.harga) }}</span>
+                <span class="pemisah-meta">•</span>
+                <span class="item-stok-info font-angka" :class="{ 'stok-kritis': it.kuantitas >= (it.stok || 0) }">
+                  Stok: {{ it.stok || 0 }}
+                </span>
+              </div>
+              
+              <!-- Stepper: [ - ] 1 [ + ] -->
+              <div class="stepper-item-pos">
+                <button class="btn-step" @click="keranjangStore.kurangiItem(it.id)" title="Kurangi 1">
+                  <Minus :size="12" />
+                </button>
+                <span class="angka-step font-angka">{{ it.kuantitas }}</span>
+                <button 
+                  class="btn-step" 
+                  :disabled="it.kuantitas >= (it.stok || 0)"
+                  :class="{ 'btn-step-disabled': it.kuantitas >= (it.stok || 0) }"
+                  @click="tambahKuantitasDariKeranjang(it)" 
+                  :title="it.kuantitas >= (it.stok || 0) ? `Maksimal stok tercapai (${it.stok} unit)` : 'Tambah 1'"
+                >
+                  <Plus :size="12" />
+                </button>
+              </div>
             </div>
 
-            <div class="item-subtotal font-angka">
-              {{ formatRupiah(it.harga * it.kuantitas) }}
+            <!-- Kanan: Total Harga & Tombol Hapus Merah -->
+            <div class="kanan-item-pos">
+              <button class="btn-hapus-merah" @click="keranjangStore.hapusItem(it.id)" title="Hapus produk">
+                <Trash2 :size="15" />
+              </button>
+              <div class="subtotal-item-pos font-angka">
+                Subtotal: <strong>{{ formatRupiah(it.harga * it.kuantitas) }}</strong>
+              </div>
             </div>
-
-            <button class="btn-hapus-item" @click="keranjangStore.hapusItem(it.id)" title="Hapus">
-              <Trash2 :size="14" />
-            </button>
           </div>
         </div>
 
-        <!-- Rincian Biaya & Total -->
-        <div class="rincian-biaya">
-          <!-- Diskon Transaksi -->
-          <div class="baris-diskon-minimal">
-            <span class="label-diskon">Diskon:</span>
-            <div class="diskon-input-wrap">
+        <!-- Rincian Biaya Bawah & Metode Pembayaran -->
+        <div class="rincian-biaya-pos">
+          <!-- Subtotal Belanja -->
+          <div class="baris-rincian-pos">
+            <span class="label-rincian">Subtotal Belanja</span>
+            <span class="nilai-rincian font-angka">{{ formatRupiah(keranjangStore.subtotal) }}</span>
+          </div>
+
+          <!-- Diskon -->
+          <div class="baris-rincian-pos">
+            <span class="label-rincian">Diskon Tagihan</span>
+            <div class="wrap-diskon-inline">
               <input 
                 :value="keranjangStore.diskonPersen"
                 type="number" 
                 min="0" 
                 max="100" 
-                class="input-diskon"
+                class="input-diskon-persen"
                 placeholder="0"
+                title="Persentase diskon"
                 @input="keranjangStore.aturDiskon($event.target.value, 'persen')"
               />
-              <span class="satuan-persen">%</span>
-              <span v-if="keranjangStore.nilaiDiskon > 0" class="nominal-diskon">(-{{ formatRupiah(keranjangStore.nilaiDiskon) }})</span>
+              <span class="persen-simbol">%</span>
+              <span class="nilai-rincian font-angka" :class="{ 'teks-merah': keranjangStore.nilaiDiskon > 0 }">
+                {{ keranjangStore.nilaiDiskon > 0 ? `-${formatRupiah(keranjangStore.nilaiDiskon)}` : 'Rp 0' }}
+              </span>
             </div>
           </div>
 
-          <!-- Tabungan Donasi Pelanggan -->
-          <div v-if="prefillPotongDonasiAktif" class="baris-tabungan-donasi">
-            <div class="teks-tabungan-info">
-              <div class="flex items-center gap-1.5">
-                <Sparkles :size="13" class="teks-emas" />
-                <span>Tabungan: <strong>{{ prefillPotongDonasiAktif.namaPelanggan }}</strong></span>
-              </div>
-              <div class="nominal-tabungan-siap font-angka">
-                Saldo: {{ formatRupiah(prefillPotongDonasiAktif.saldoMaksimal) }} 
-                (Dipotong: <strong class="teks-hijau">-{{ formatRupiah(nominalPotongTabunganAktif) }}</strong>)
-              </div>
-              <div v-if="totalTagihanBersihPOS === 0" class="badge-lunas-pos font-angka">
-                ✓ Lunas Tabungan — Sisa Saldo: {{ formatRupiah(Math.max(0, prefillPotongDonasiAktif.saldoMaksimal - nominalPotongTabunganAktif)) }}
-              </div>
+          <!-- Tabungan Celengan Donasi (Jika Terpasang) -->
+          <div v-if="prefillPotongDonasiAktif" class="baris-rincian-pos donasi-terpotong">
+            <span class="label-rincian flex items-center gap-1">
+              <span>Potongan Tabungan ({{ prefillPotongDonasiAktif.namaPelanggan }})</span>
+              <button class="btn-hapus-prefill" @click="prefillPotongDonasiAktif = null" title="Hapus potongan tabungan">✕</button>
+            </span>
+            <span class="nilai-rincian teks-sukses font-angka">-{{ formatRupiah(nominalPotongTabunganAktif) }}</span>
+          </div>
+
+          <!-- Total Tagihan Bersih -->
+          <div class="baris-total-pos">
+            <span class="label-total">Total Tagihan</span>
+            <span class="nilai-total font-angka">{{ formatRupiah(totalTagihanBersihPOS) }}</span>
+          </div>
+
+          <!-- Segmented Metode Pembayaran (Tunai / QRIS & Kartu / Tabungan Donasi) -->
+          <div class="payment-method-area">
+            <div class="payment-label">Metode Pembayaran</div>
+            <div class="segmented-payment-methods">
+              <button 
+                type="button" 
+                class="seg-method-btn"
+                :class="{ 'aktif': metodeBayarPOS === 'cash' }"
+                @click="metodeBayarPOS = 'cash'"
+                title="Pembayaran Tunai langsung di kasir"
+              >
+                <Banknote :size="14" />
+                <span>Tunai</span>
+              </button>
+
+              <button 
+                type="button" 
+                class="seg-method-btn"
+                :class="{ 'aktif': metodeBayarPOS === 'card' }"
+                @click="metodeBayarPOS = 'card'"
+                title="QRIS atau Kartu Debit / Non-Tunai"
+              >
+                <CreditCard :size="14" />
+                <span>QRIS / Kartu</span>
+              </button>
+
+              <button 
+                type="button" 
+                class="seg-method-btn"
+                :class="{ 'aktif': metodeBayarPOS === 'split' || prefillPotongDonasiAktif }"
+                @click="pilihMetodeSplitDonasi"
+                title="Potong dari saldo tabungan donasi pembeli"
+              >
+                <HeartHandshake :size="14" />
+                <span>Tabungan / Potong</span>
+              </button>
             </div>
-            <button class="btn-batal-tabungan" @click="prefillPotongDonasiAktif = null" title="Batalkan potongan">✕</button>
-          </div>
-          <div v-else class="baris-opsi-tabungan">
-            <button class="btn-tautkan-tabungan" @click="tampilModalDonasiPelanggan = true">
-              <Coins :size="14" class="teks-emas" />
-              <span>Gunakan Celengan Tabungan Pelanggan</span>
-            </button>
           </div>
 
-          <div class="baris-rincian">
-            <span class="teks-redup">Subtotal:</span>
-            <span class="angka-rincian font-angka">{{ formatRupiah(keranjangStore.subtotal) }}</span>
-          </div>
-
-          <div v-if="keranjangStore.nilaiDiskon > 0" class="baris-rincian">
-            <span class="teks-redup">Diskon Toko:</span>
-            <span class="angka-rincian teks-merah font-angka">-{{ formatRupiah(keranjangStore.nilaiDiskon) }}</span>
-          </div>
-
-          <div v-if="nominalPotongTabunganAktif > 0" class="baris-rincian">
-            <span class="teks-redup">Potongan Tabungan:</span>
-            <span class="angka-rincian teks-hijau font-angka">-{{ formatRupiah(nominalPotongTabunganAktif) }}</span>
-          </div>
-
-          <!-- Total Besar Minimalis & Kontras Tinggi -->
-          <div class="kotak-total-besar" :class="{ 'lunas-total-box': totalTagihanBersihPOS === 0 && nominalPotongTabunganAktif > 0 }">
-            <div class="label-total-besar">
-              {{ (totalTagihanBersihPOS === 0 && nominalPotongTabunganAktif > 0) ? 'Total Bayar Tunai (Lunas Tabungan)' : (nominalPotongTabunganAktif > 0 ? 'Sisa yang Harus Dibayar' : 'Total Tagihan') }}
-            </div>
-            <div class="angka-total-besar font-angka">{{ formatRupiah(totalTagihanBersihPOS) }}</div>
-          </div>
-
-          <!-- Tombol Bayar / Selesaikan Transaksi -->
+          <!-- Tombol Bayar Utama -->
           <button 
             v-if="shiftStore.apakahShiftTerbuka"
-            class="tombol-bayar-utama"
-            :class="{ 'btn-lunas-sukses-pos': totalTagihanBersihPOS === 0 && nominalPotongTabunganAktif > 0 }"
+            class="btn-charge-pos"
             :disabled="keranjangStore.itemKeranjang.length === 0"
             @click="tanganiKlikBayarPOS"
           >
             <template v-if="totalTagihanBersihPOS === 0 && nominalPotongTabunganAktif > 0">
-              <Check :size="20" />
-              <span>SELESAIKAN (Lunas Tabungan)</span>
-            </template>
-            <template v-else-if="nominalPotongTabunganAktif > 0">
-              <span>BAYAR SISA (F9 / F4)</span>
-              <span class="nominal-bayar-btn font-angka">{{ formatRupiah(totalTagihanBersihPOS) }}</span>
+              <Check :size="18" />
+              <span>Selesaikan (Lunas Tabungan) [F9]</span>
             </template>
             <template v-else>
-              <span>BAYAR (F9 / F4)</span>
-              <span class="nominal-bayar-btn font-angka">{{ formatRupiah(totalTagihanBersihPOS) }}</span>
+              <span>Bayar {{ formatRupiah(totalTagihanBersihPOS) }} [F9]</span>
             </template>
           </button>
           <button 
             v-else
-            class="tombol-buka-shift-utama"
+            class="btn-buka-shift-pos"
             @click="tampilModalBukaShift = true"
           >
-            Buka Laci Kasir (Mulai Transaksi)
+            Buka Laci Kasir untuk Mulai
           </button>
         </div>
       </aside>
@@ -778,7 +933,7 @@ function transaksiBaru() {
         <span class="total-melayang font-angka">{{ formatRupiah(totalTagihanBersihPOS) }}</span>
       </div>
       <button class="btn-buka-keranjang-melayang">
-        <span>Lihat Keranjang & Bayar →</span>
+        <span>Lihat Pesanan & Bayar →</span>
       </button>
     </div>
 
@@ -799,6 +954,7 @@ function transaksiBaru() {
       v-if="tampilModalBayar" 
       :total="keranjangStore.totalAkhir" 
       :prefill-potong-donasi="prefillPotongDonasiAktif" 
+      :metode-awal="metodeBayarPOS === 'card' ? 'qris' : 'tunai'"
       @tutup="tampilModalBayar = false" 
       @bayar="prosesBayar" 
     />
@@ -835,12 +991,12 @@ function transaksiBaru() {
 
 <style scoped>
 .pos-layout {
-  min-height: calc(100vh - 56px);
+  min-height: calc(100vh - 58px);
   padding: 16px 20px;
   background: var(--warna-latar);
 }
 
-/* Tab Switcher Responsif Tablet & Mobile */
+/* Tab Switcher Responsif Tablet & Mobile (< 1024px) */
 .tab-pos-responsif {
   display: none;
   gap: 8px;
@@ -860,24 +1016,23 @@ function transaksiBaru() {
   padding: 10px 14px;
   background: #ffffff;
   border: 1px solid var(--warna-batas);
-  border-radius: var(--radius-md);
+  border-radius: 10px;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: var(--warna-teks-redup);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 .tab-item-responsif.aktif {
-  background: #ff6b00;
+  background: #6366f1;
   color: #ffffff;
-  border-color: #ff6b00;
-  box-shadow: 0 2px 8px rgba(255, 107, 0, 0.28);
+  border-color: #6366f1;
 }
 .badge-tab-nav {
   padding: 2px 7px;
   border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-weight: 700;
   background: #f1f5f9;
   color: #475569;
 }
@@ -886,12 +1041,12 @@ function transaksiBaru() {
   color: #ffffff;
 }
 
-/* Grid POS Responsif */
+/* Grid POS Responsif: Katalog & Keranjang Checkout */
 .grid-pos {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(360px, 30vw, 420px);
-  gap: 16px;
-  height: calc(100vh - 88px);
+  grid-template-columns: minmax(0, 1fr) clamp(360px, 32vw, 420px);
+  gap: 18px;
+  height: calc(100vh - 90px);
 }
 
 @media (max-width: 1024px) {
@@ -914,11 +1069,11 @@ function transaksiBaru() {
 .kolom-katalog {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   overflow: hidden;
 }
 
-/* Banner Shift Minimalis */
+/* Banner Peringatan Shift Belum Buka */
 .banner-shift-belum-buka {
   display: flex;
   align-items: center;
@@ -927,14 +1082,14 @@ function transaksiBaru() {
   padding: 8px 14px;
   background: #fffbeb;
   border: 1px solid #fde68a;
-  border-radius: var(--radius-md);
+  border-radius: 10px;
   color: #92400e;
+  font-size: 0.8rem;
 }
 .shift-kiri {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.85rem;
 }
 .titik-kuning {
   width: 7px;
@@ -945,115 +1100,102 @@ function transaksiBaru() {
 }
 .teks-shift-judul {
   font-weight: 600;
-  color: #92400e;
-}
-.teks-shift-sub {
-  color: #b45309;
-  font-size: 0.8rem;
 }
 .btn-shift-aksi {
-  background: #ff6b00;
+  background: #6366f1;
   color: #ffffff;
   border: none;
   font-weight: 700;
-  font-size: 0.8rem;
-  padding: 6px 14px;
+  font-size: 0.78rem;
+  padding: 5px 12px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 2px 6px rgba(255, 107, 0, 0.2);
 }
 .btn-shift-aksi:hover {
-  background: #ea580c;
+  background: #4f46e5;
 }
 
-.banner-shift-aktif {
+/* Bar Kategori & Cari Sesuai Mockup Confidency OS */
+.bar-kategori-dan-cari {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 6px 14px;
-  background: #ffffff;
-  border: 1.5px solid #f1f5f9;
-  border-radius: var(--radius-md);
-  font-size: 0.825rem;
-}
-.titik-hijau-shift {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #10b981;
   flex-shrink: 0;
 }
-.label-kasir-aktif {
-  color: var(--warna-teks-utama);
-}
-.pemisah-shift {
-  color: #cbd5e1;
-}
-.label-modal-laci {
-  color: var(--warna-teks-redup);
-}
-.btn-tutup-shift-minimal {
-  background: transparent;
-  color: #64748b;
-  border: 1px solid #cbd5e1;
-  font-weight: 500;
-  font-size: 0.775rem;
-  padding: 3px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.btn-tutup-shift-minimal:hover {
-  background: #fee2e2;
-  color: #dc2626;
-  border-color: #fca5a5;
-}
 
-/* Bar Pencarian Khas Bubble POS */
-.bar-pencarian {
-  display: flex;
-  gap: 8px;
-}
-.input-scan-wrap {
-  position: relative;
-  flex: 1;
+.filter-kategori-pills {
   display: flex;
   align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
-.ikon-scan {
-  position: absolute;
-  left: 16px;
-  color: #94a3b8;
-  pointer-events: none;
+.filter-kategori-pills::-webkit-scrollbar {
+  display: none;
 }
-.input-scan {
-  padding-left: 44px;
-  padding-right: 36px;
-  font-size: 0.925rem;
-  height: 44px;
-  border-radius: 9999px;
+
+.pill-kategori {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 0.825rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  text-transform: capitalize;
+}
+.pill-kategori:hover {
+  color: #0f172a;
+  background: #eef2ff;
+}
+.pill-kategori.aktif {
+  background: #6366f1;
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(99, 102, 241, 0.2);
+}
+
+.kotak-cari-pos {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   background: #ffffff;
-  border: 1.5px solid #cbd5e1;
-  color: var(--warna-teks-utama);
-  font-weight: 500;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  border: 1px solid #eaedf2;
+  border-radius: 8px;
+  padding: 4px 10px;
+  width: 170px;
+  flex-shrink: 0;
+  transition: all 0.18s ease;
 }
-.input-scan:focus {
-  border-color: #2563eb;
+.kotak-cari-pos:focus-within {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 1px #6366f1;
+  width: 220px;
+}
+.ikon-cari-pos {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+.input-cari-pos {
+  border: none;
+  background: transparent;
   outline: none;
-  box-shadow: 0 0 0 1px #2563eb;
+  font-size: 0.82rem;
+  color: #0f172a;
+  width: 100%;
+  font-family: inherit;
 }
 .btn-bersih-cari {
-  position: absolute;
-  right: 14px;
   background: none;
   border: none;
   color: #94a3b8;
-  font-size: 0.8rem;
   cursor: pointer;
-  padding: 4px;
+  font-size: 0.75rem;
 }
 .btn-bersih-cari:hover {
   color: #0f172a;
@@ -1063,97 +1205,112 @@ function transaksiBaru() {
   background: #fef2f2;
   border: 1px solid #fecaca;
   color: #dc2626;
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
-  font-size: 0.85rem;
-  font-weight: 500;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
-/* Filter Kategori Chips */
-.filter-kategori {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-.pill-kategori {
+.banner-peringatan-stok {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #b45309;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
   display: flex;
   align-items: center;
-  padding: 8px 16px;
-  background: #ffffff;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
-  color: #475569;
+  justify-content: space-between;
+}
+.ikon-peringatan-stok {
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+.btn-tutup-notif-stok {
+  background: none;
+  border: none;
+  color: #b45309;
   font-size: 0.85rem;
-  font-weight: 600;
   cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.18s ease;
-  text-transform: capitalize;
+  padding: 0 4px;
 }
-.pill-kategori:hover {
-  background: #eff6ff;
-  color: #2563eb;
-  border-color: #bfdbfe;
-}
-.pill-kategori.aktif {
-  background: #2563eb;
-  color: #ffffff;
-  border-color: #2563eb;
-  font-weight: 700;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+.btn-tutup-notif-stok:hover {
+  color: #78350f;
 }
 
-/* Grid Card Produk Responsif */
+/* Grid Studio Card Produk Sesuai Mockup (3 Kolom Responsif) */
 .grid-produk {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
   overflow-y: auto;
   padding-right: 4px;
-  padding-bottom: 14px;
+  padding-bottom: 12px;
   flex: 1;
   align-content: start;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f4f5f8;
+}
+
+@media (max-width: 1200px) {
+  .grid-produk {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+@media (max-width: 600px) {
+  .grid-produk {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
 }
 
 .card-produk {
   background: #ffffff;
-  border: 1.5px solid #e2e8f0;
+  border: 1px solid #eaedf2;
   border-radius: 16px;
   padding: 12px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  transition: all 0.18s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   position: relative;
   user-select: none;
 }
 .card-produk:hover {
-  border-color: #2563eb;
+  border-color: #c7d2fe;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
 }
 .card-produk:active {
-  transform: translateY(-1px);
+  transform: scale(0.98);
 }
 .card-produk.stok-kosong {
-  opacity: 0.55;
+  opacity: 0.5;
   background: #f8fafc;
+  cursor: not-allowed;
+}
+.card-produk.stok-kosong:hover {
+  border-color: #fca5a5;
+  transform: none;
+  box-shadow: none;
+}
+.card-produk.stok-mentok {
+  border-color: #fde68a;
 }
 
 .wadah-foto-produk {
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 1 / 1;
   border-radius: 12px;
   overflow: hidden;
-  margin-bottom: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f1f5f9;
+  background: #f8f9fa;
   position: relative;
-  border: 1px solid #e2e8f0;
 }
 
 .foto-kartu-pos {
@@ -1169,151 +1326,92 @@ function transaksiBaru() {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
-  transition: all 0.2s ease;
 }
 .huruf-kategori-pos {
-  font-size: 1.75rem;
+  font-size: 2.2rem;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
 
-.badge-stok-overlay {
+.badge-di-keranjang {
   position: absolute;
-  bottom: 6px;
-  right: 6px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  top: 8px;
+  right: 8px;
+  background: #6366f1;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
 }
-.badge-stok-overlay.habis {
+
+.badge-stok-habis {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
   background: #fee2e2;
   color: #b91c1c;
   border: 1px solid #fca5a5;
-}
-.badge-stok-overlay.menipis {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1.5px 6px;
+  border-radius: 4px;
 }
 
-.detail-kartu {
+.info-kartu-produk {
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
-  flex: 1;
+  gap: 3px;
 }
 
 .nama-produk {
-  font-weight: 700;
-  font-size: 0.9rem;
+  font-weight: 600;
+  font-size: 0.88rem;
   color: #0f172a;
   line-height: 1.35;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  min-height: 2.45rem;
-  margin-bottom: 4px;
-  word-break: break-word;
-}
-
-.meta-sub-kartu {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-bottom: 6px;
-  overflow: hidden;
   white-space: nowrap;
-}
-.sku-teks {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: #475569;
-  background: #f1f5f9;
-  padding: 1.5px 5px;
-  border-radius: 4px;
-  letter-spacing: 0.02em;
-  flex-shrink: 0;
-  border: 1px solid #e2e8f0;
-}
-
-.kategori-sub {
-  font-size: 0.72rem;
-  color: #64748b;
-  font-weight: 600;
+  overflow: hidden;
   text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
-  text-transform: capitalize;
 }
 
-.baris-bawah-kartu {
+.baris-harga-dan-stok {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: auto;
-  padding-top: 6px;
+  gap: 6px;
 }
 
 .harga-produk {
-  font-size: 1.08rem;
-  font-weight: 900;
-  color: #2563eb;
-  font-family: var(--font-angka);
-  white-space: nowrap;
-  line-height: 1.2;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
 }
 
-.btn-order-kartu {
-  background: #ffffff;
-  border: 1.5px solid #2563eb;
-  color: #2563eb;
-  border-radius: 9999px;
-  padding: 3px 12px;
-  font-size: 0.775rem;
+.badge-info-stok {
+  font-size: 0.7rem;
   font-weight: 700;
-  cursor: pointer;
-  transition: all 0.18s ease;
-  font-family: inherit;
+  padding: 1.5px 6px;
+  border-radius: 6px;
+  white-space: nowrap;
 }
 
-.btn-order-kartu:hover,
-.card-produk:hover .btn-order-kartu {
-  background: #2563eb;
-  color: #ffffff;
+.badge-info-stok.stok-aman {
+  color: #64748b;
+  background: #f1f5f9;
 }
 
-@media (max-width: 1200px) {
-  .grid-produk {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 10px;
-  }
+.badge-info-stok.stok-menipis {
+  color: #b45309;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
 }
 
-@media (max-width: 768px) {
-  .grid-produk {
-    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
-    gap: 8px;
-  }
-  .nama-produk {
-    font-size: 0.82rem;
-    min-height: 2.2rem;
-  }
-  .harga-produk {
-    font-size: 0.95rem;
-  }
-  .card-produk {
-    padding: 8px;
-  }
-}
-
-@media (max-width: 440px) {
-  .grid-produk {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
+.badge-info-stok.stok-nol {
+  color: #b91c1c;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
 }
 
 .state-kosong {
@@ -1322,376 +1420,424 @@ function transaksiBaru() {
   padding: 60px 20px;
   color: #94a3b8;
   background: #ffffff;
-  border-radius: var(--radius-lg);
-  border: 1px dashed var(--warna-batas);
+  border-radius: 16px;
+  border: 1px dashed #eaedf2;
 }
 
-/* Kolom Keranjang Minimalis */
+/* Kolom Keranjang Sesuai Mockup Confidency OS */
 .kolom-keranjang {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 18px;
+  padding: 20px;
   background: #ffffff;
-  border: 1.5px solid #e2e8f0;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 1px solid #eaedf2;
+  border-radius: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 .header-keranjang {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 14px;
-  border-bottom: 1.5px solid #f1f5f9;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eaedf2;
+  flex-shrink: 0;
 }
 
-.judul-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 .judul-keranjang {
-  font-size: 1.1rem;
-  font-weight: 800;
+  font-size: 1rem;
+  font-weight: 700;
   color: #0f172a;
 }
-.badge-hitung-item {
-  font-size: 0.75rem;
+
+.badge-hitung-pesanan {
+  background: #eef2ff;
+  color: #6366f1;
+  font-size: 0.72rem;
   font-weight: 700;
-  background: #eff6ff;
-  color: #2563eb;
-  border: 1px solid #bfdbfe;
-  padding: 2px 8px;
+  padding: 2px 7px;
   border-radius: 9999px;
+  border: 1px solid #c7d2fe;
 }
 
-.btn-kosongkan-minimal {
-  background: transparent;
-  border: none;
-  color: #94a3b8;
-  cursor: pointer;
+.btn-reset-order {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 0.775rem;
+  gap: 5px;
+  background: #fff5f5;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.75rem;
   font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 6px;
+  cursor: pointer;
   transition: all 0.15s ease;
 }
-.btn-kosongkan-minimal:hover {
+.btn-reset-order:hover {
   background: #fee2e2;
-  color: #dc2626;
 }
 
 .daftar-item-keranjang {
   flex: 1;
   overflow-y: auto;
-  padding: 8px 0;
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #ffffff;
 }
 
 .keranjang-kosong {
   text-align: center;
-  padding: 60px 20px;
+  padding: 50px 16px;
   color: #94a3b8;
 }
 .teks-utama {
   color: #475569;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 600;
 }
 .hint-keranjang {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   margin-top: 4px;
 }
 
-.baris-item {
+/* Item Baris Keranjang Sesuai Mockup */
+.baris-item-pos {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 4px;
-  border-bottom: 1px solid #f1f5f9;
-  transition: background 0.15s ease;
+  gap: 12px;
 }
-.baris-item:hover {
-  background: #f8fafc;
-  border-radius: 8px;
+
+.thumb-item-keranjang {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  background: #f8f9fa;
+  border: 1px solid #eaedf2;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
-.item-detail {
-  flex: 1.2;
+.img-thumb-keranjang {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.thumb-placeholder {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.detail-item-tengah {
+  flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
+
 .item-nama {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--warna-teks-utama);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0f172a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .item-meta-baris {
   display: flex;
   align-items: center;
-  gap: 5px;
-  margin-top: 2px;
+  gap: 6px;
+  font-size: 0.775rem;
 }
-.item-kode {
-  background: #f1f5f9;
-  padding: 1px 4px;
-  border-radius: 4px;
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: #475569;
-}
-.item-pemisah {
-  font-size: 0.65rem;
-  color: #cbd5e1;
-}
+
 .item-harga-satuan {
   font-size: 0.775rem;
-  color: #2563eb;
-  font-weight: 700;
-  font-family: var(--font-angka);
+  color: #64748b;
 }
 
-.kontrol-qty {
+.pemisah-meta {
+  color: #cbd5e1;
+  font-size: 0.65rem;
+}
+
+.item-stok-info {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.item-stok-info.stok-kritis {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.stepper-item-pos {
   display: flex;
   align-items: center;
-  border: 1px solid #bfdbfe;
-  border-radius: 8px;
-  overflow: hidden;
-  background: #eff6ff;
+  gap: 8px;
+  margin-top: 2px;
 }
-.btn-qty {
-  background: #eff6ff;
-  border: none;
-  padding: 4px 7px;
-  cursor: pointer;
+.btn-step {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #475569;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #2563eb;
+  cursor: pointer;
   transition: all 0.15s ease;
 }
-.btn-qty:hover {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-.input-qty {
-  width: 32px;
-  text-align: center;
-  background: none;
-  border: none;
+.btn-step:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
   color: #0f172a;
-  font-weight: 800;
+}
+.btn-step-disabled {
+  opacity: 0.35;
+  cursor: not-allowed !important;
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #94a3b8 !important;
+}
+.angka-step {
   font-size: 0.85rem;
-  font-family: var(--font-angka);
-}
-
-.item-subtotal {
-  font-size: 0.9rem;
-  font-weight: 800;
+  font-weight: 700;
   color: #0f172a;
-  font-family: var(--font-angka);
-  width: 85px;
-  text-align: right;
+  min-width: 14px;
+  text-align: center;
 }
 
-.btn-hapus-item {
+.kanan-item-pos {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.btn-hapus-merah {
   background: none;
   border: none;
-  color: #cbd5e1;
+  color: #ef4444;
   cursor: pointer;
-  padding: 4px;
+  padding: 3px;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.15s ease;
 }
-.btn-hapus-item:hover {
-  color: #dc2626;
+.btn-hapus-merah:hover {
   background: #fee2e2;
 }
-
-/* Rincian Biaya Bawah */
-.rincian-biaya {
-  border-top: 1.5px solid #f1f5f9;
-  padding-top: 12px;
+.subtotal-item-pos {
+  font-size: 0.8rem;
+  color: #64748b;
+  white-space: nowrap;
+}
+.subtotal-item-pos strong {
+  color: #0f172a;
+  font-size: 0.825rem;
 }
 
-.baris-rincian {
+/* Rincian Biaya Bawah Sesuai Mockup */
+.rincian-biaya-pos {
+  border-top: 1px solid #eaedf2;
+  padding-top: 14px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.85rem;
-  color: var(--warna-teks-redup);
-  margin-bottom: 6px;
-}
-.angka-rincian {
-  font-family: var(--font-angka);
-  font-weight: 700;
-  color: var(--warna-teks-utama);
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
-.baris-diskon-minimal {
+.baris-rincian-pos {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 0.825rem;
-  color: var(--warna-teks-redup);
-  margin-bottom: 6px;
 }
-.diskon-input-wrap {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.input-diskon {
-  width: 44px;
-  padding: 2px 4px;
-  text-align: center;
-  background: #ffffff;
-  border: 1px solid var(--warna-batas);
-  border-radius: 4px;
-  font-weight: 600;
-  font-size: 0.8rem;
-}
-.satuan-persen {
+.label-rincian {
   color: #64748b;
 }
-.nominal-diskon {
-  font-weight: 700;
-  color: #2563eb;
+.nilai-rincian {
+  color: #0f172a;
+  font-weight: 600;
 }
 
-.baris-tabungan-donasi {
-  background: #eff6ff;
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid #bfdbfe;
+.wrap-diskon-inline {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-size: 0.8rem;
-  margin-bottom: 6px;
+  gap: 6px;
 }
-.nominal-tabungan-siap {
-  color: #2563eb;
-  font-family: var(--font-angka);
-  font-weight: 800;
-  margin-left: 6px;
+.input-diskon-persen {
+  width: 36px;
+  height: 24px;
+  text-align: center;
+  border: 1px solid #eaedf2;
+  border-radius: 6px;
+  font-size: 0.775rem;
+  font-weight: 600;
+  background: #ffffff;
 }
-.btn-batal-tabungan {
+.persen-simbol {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.donasi-terpotong {
+  background: #ecfdf5;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.btn-hapus-prefill {
   background: none;
   border: none;
-  color: #dc2626;
+  color: #ef4444;
+  font-size: 0.7rem;
   cursor: pointer;
-  font-size: 0.75rem;
-  font-weight: 700;
+  margin-left: 4px;
+}
+.teks-sukses {
+  color: #059669;
+}
+.teks-merah {
+  color: #ef4444;
 }
 
-.baris-opsi-tabungan {
-  margin-bottom: 8px;
-}
-.btn-tautkan-tabungan {
-  width: 100%;
-  background: none;
-  border: 1.5px dashed #bfdbfe;
-  color: #1e40af;
-  font-size: 0.775rem;
-  font-weight: 700;
-  padding: 6px 8px;
-  border-radius: 8px;
-  cursor: pointer;
-  background: #f8fafc;
-  transition: all 0.15s ease;
-}
-.btn-tautkan-tabungan:hover {
-  background: #eff6ff;
-  border-color: #2563eb;
-  color: #2563eb;
-}
-
-.kotak-total-besar {
+/* Total Row */
+.baris-total-pos {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
-  padding: 12px 0;
-  margin: 6px 0 14px 0;
-  border-top: 1.5px dashed #cbd5e1;
+  align-items: center;
+  padding-top: 8px;
+  margin-top: 2px;
+  border-top: 1px dashed #eaedf2;
 }
-.label-total-besar {
-  font-size: 1rem;
+.label-total {
+  font-size: 0.95rem;
   font-weight: 700;
-  color: var(--warna-teks-utama);
+  color: #0f172a;
 }
-.angka-total-besar {
-  font-size: 1.6rem;
-  font-weight: 900;
-  color: #2563eb;
+.nilai-total {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
 }
 
-.tombol-bayar-utama {
+/* Segmented Payment Method Selector Sesuai Mockup */
+.payment-method-area {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.payment-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.segmented-payment-methods {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  background: #f8f9fa;
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid #eaedf2;
+}
+
+.seg-method-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.seg-method-btn:hover {
+  color: #0f172a;
+}
+.seg-method-btn.aktif {
+  background: #ffffff;
+  border-color: #eaedf2;
+  color: #0f172a;
+  font-weight: 700;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* Primary CTA: Charge Button Sesuai Mockup (Solid Iris #6366f1) */
+.btn-charge-pos {
   width: 100%;
-  height: 50px;
-  background: #2563eb;
+  height: 46px;
+  margin-top: 4px;
+  background: #6366f1;
   color: #ffffff;
-  border: 1px solid #1d4ed8;
-  border-radius: var(--radius-md);
-  font-weight: 800;
-  font-size: 1.05rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  transition: all 0.18s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+  font-family: inherit;
 }
-.tombol-bayar-utama:hover:not(:disabled) {
-  background: #1d4ed8;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-  transform: translateY(-1px);
+.btn-charge-pos:hover:not(:disabled) {
+  background: #4f46e5;
 }
-.tombol-bayar-utama:disabled {
+.btn-charge-pos:disabled {
   opacity: 0.45;
   cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
 }
 
-.tombol-buka-shift-utama {
+.btn-buka-shift-pos {
   width: 100%;
   height: 46px;
-  background: #2563eb;
+  margin-top: 4px;
+  background: #6366f1;
   color: #ffffff;
-  border: 1px solid #1d4ed8;
-  border-radius: var(--radius-md);
+  border: none;
+  border-radius: 12px;
+  font-size: 0.88rem;
   font-weight: 700;
-  font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.18s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-.tombol-buka-shift-utama:hover {
-  background: #1d4ed8;
+  font-family: inherit;
 }
 
-/* Tablet & Mobile Buttons */
 .btn-kembali-katalog-mobile {
   display: none;
 }
 @media (max-width: 1024px) {
   .btn-kembali-katalog-mobile {
     display: inline-block;
-    padding: 6px 12px;
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    color: #2563eb;
-    border-radius: 8px;
-    font-size: 0.8rem;
+    padding: 4px 10px;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    color: #6366f1;
+    border-radius: 7px;
+    font-size: 0.775rem;
     font-weight: 700;
     cursor: pointer;
   }
@@ -1707,13 +1853,13 @@ function transaksiBaru() {
     bottom: 12px;
     left: 12px;
     right: 12px;
-    background: #2563eb;
+    background: #6366f1;
     color: #ffffff;
     padding: 12px 18px;
     border-radius: 14px;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25);
     z-index: 99;
     cursor: pointer;
   }
@@ -1735,7 +1881,7 @@ function transaksiBaru() {
   }
   .btn-buka-keranjang-melayang {
     background: #ffffff;
-    color: #2563eb;
+    color: #6366f1;
     border: none;
     padding: 6px 14px;
     border-radius: 8px;

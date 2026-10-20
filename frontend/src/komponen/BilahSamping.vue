@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useKoneksiStore } from '../stores/koneksi'
@@ -15,8 +15,12 @@ import {
   User, 
   LogOut, 
   X, 
-  Sparkles 
+  Sparkles,
+  Search
 } from 'lucide-vue-next'
+
+const kataKunciMenu = ref('')
+const inputSearchRef = ref(null)
 
 const props = defineProps({
   terbuka: {
@@ -39,6 +43,19 @@ function navigasiKe(rute) {
   }
 }
 
+// Menu Utama Kasir
+const daftarMenuUtama = [
+  { nama: 'Kasir (POS)', rute: '/pos', ikon: ShoppingCart, badge: null },
+  { nama: 'Riwayat Transaksi', rute: '/transaksi', ikon: Receipt, badge: null },
+  { nama: 'Tabungan & Donasi', rute: '/donasi', ikon: HeartHandshake, badge: 'Celengan' }
+]
+
+const menuUtamaTersaring = computed(() => {
+  const q = kataKunciMenu.value.trim().toLowerCase()
+  if (!q) return daftarMenuUtama
+  return daftarMenuUtama.filter(m => m.nama.toLowerCase().includes(q))
+})
+
 // Menu Manajemen Toko (untuk peran manajer & owner)
 const menuManajemen = computed(() => {
   const list = [
@@ -46,8 +63,26 @@ const menuManajemen = computed(() => {
     { nama: 'Stok Barang', rute: '/stok', ikon: Boxes, peran: ['manajer', 'owner'] },
     { nama: 'Laporan Penjualan', rute: '/laporan', ikon: BarChart3, peran: ['manajer', 'owner'] },
     { nama: 'Pengaturan Toko', rute: '/pengaturan', ikon: Settings, peran: ['owner'] }
-  ]
-  return list.filter(m => m.peran.includes(authStore.peran))
+  ].filter(m => m.peran.includes(authStore.peran))
+
+  const q = kataKunciMenu.value.trim().toLowerCase()
+  if (!q) return list
+  return list.filter(m => m.nama.toLowerCase().includes(q))
+})
+
+function tanganiKeydownCtrlK(e) {
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+    e.preventDefault()
+    inputSearchRef.value?.focus()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', tanganiKeydownCtrlK)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', tanganiKeydownCtrlK)
 })
 
 function keluar() {
@@ -81,7 +116,7 @@ function keluar() {
           <div class="logo-badge-sidebar">K</div>
           <div class="brand-text">
             <span class="brand-nama">Kasirku</span>
-            <span class="brand-tagline">POS & Tabungan</span>
+            <span class="brand-tagline">Sistem Operasional Toko</span>
           </div>
         </div>
 
@@ -95,59 +130,55 @@ function keluar() {
         </button>
       </div>
 
+      <!-- Kotak Pencarian Menu Cepat -->
+      <div class="sidebar-search-area">
+        <div class="sidebar-search-box">
+          <Search :size="14" class="ikon-search-sidebar" />
+          <input 
+            ref="inputSearchRef"
+            v-model="kataKunciMenu" 
+            type="text" 
+            placeholder="Cari menu... (Ctrl+K)" 
+            class="input-search-sidebar"
+          />
+          <button 
+            v-if="kataKunciMenu" 
+            class="btn-bersih-cari-sidebar" 
+            @click="kataKunciMenu = ''"
+            title="Hapus pencarian"
+          >
+            ✕
+          </button>
+          <kbd v-else class="kbd-sidebar">Ctrl+K</kbd>
+        </div>
+      </div>
+
       <!-- Area Navigasi Scrollable (Dapat Menampung Banyak Menu ke Bawah) -->
       <nav class="nav-sidebar-scroll">
-        <!-- GRUP 1: MENU UTAMA (Sesuai Permintaan: Kasir, Riwayat Struk, Donasi) -->
-        <div class="grup-menu-sidebar">
+        <!-- GRUP 1: MENU UTAMA (Kasir, Riwayat Transaksi, Tabungan & Donasi) -->
+        <div v-if="menuUtamaTersaring.length > 0" class="grup-menu-sidebar">
           <div class="label-grup">MENU UTAMA</div>
 
-          <!-- 1. Menu Kasir -->
           <router-link 
-            to="/pos" 
+            v-for="item in menuUtamaTersaring"
+            :key="item.rute"
+            :to="item.rute" 
             class="item-menu-sidebar"
-            :class="{ 'aktif': route.path === '/pos' }"
+            :class="{ 
+              'aktif': route.path === item.rute,
+              'btn-menu-donasi': item.rute === '/donasi'
+            }"
             @click="window.innerWidth < 1024 && emit('tutup')"
           >
-            <div class="ikon-wrapper">
-              <ShoppingCart :size="18" />
+            <div class="ikon-wrapper" :class="{ 'ikon-donasi': item.rute === '/donasi' }">
+              <component :is="item.ikon" :size="18" />
             </div>
             <div class="teks-menu">
-              <span class="nama-menu">Kasir</span>
+              <span class="nama-menu">{{ item.nama }}</span>
             </div>
-          </router-link>
-
-          <!-- 2. Menu Riwayat Struk -->
-          <router-link 
-            to="/transaksi" 
-            class="item-menu-sidebar"
-            :class="{ 'aktif': route.path === '/transaksi' }"
-            @click="window.innerWidth < 1024 && emit('tutup')"
-          >
-            <div class="ikon-wrapper">
-              <Receipt :size="18" />
-            </div>
-            <div class="teks-menu">
-              <span class="nama-menu">Riwayat Struk</span>
-            </div>
-          </router-link>
-
-          <!-- 3. Menu Donasi (Tabungan Celengan Kembalian Pembeli - Halaman Khusus) -->
-          <router-link 
-            to="/donasi" 
-            class="item-menu-sidebar btn-menu-donasi"
-            :class="{ 'aktif': route.path === '/donasi' }"
-            @click="window.innerWidth < 1024 && emit('tutup')"
-            title="Tabungan Donasi Kembalian Pembeli"
-          >
-            <div class="ikon-wrapper ikon-donasi">
-              <HeartHandshake :size="18" />
-            </div>
-            <div class="teks-menu">
-              <span class="nama-menu">Donasi</span>
-            </div>
-            <span class="badge-tabungan-sidebar">
+            <span v-if="item.badge" class="badge-tabungan-sidebar">
               <Sparkles :size="11" class="teks-emas" />
-              <span>Tabungan</span>
+              <span>{{ item.badge }}</span>
             </span>
           </router-link>
         </div>
@@ -189,9 +220,17 @@ function keluar() {
             <span class="badge-angka-gagal">{{ koneksiStore.jumlahGagal }}</span>
           </router-link>
         </div>
+
+        <!-- State jika tidak ada menu cocok -->
+        <div 
+          v-if="menuUtamaTersaring.length === 0 && menuManajemen.length === 0" 
+          class="menu-kosong-sidebar"
+        >
+          <span>Tidak ada menu yang sesuai</span>
+        </div>
       </nav>
 
-      <!-- Footer Sidebar: Info Pengguna & Tombol Keluar -->
+      <!-- Footer Sidebar: Info Pengguna & Tombol Keluar (Sesuai Mockup) -->
       <div class="footer-sidebar">
         <div class="kartu-user-sidebar">
           <div class="avatar-user-sidebar">
@@ -199,7 +238,7 @@ function keluar() {
           </div>
           <div class="detail-user-sidebar">
             <span class="nama-user-sidebar" :title="authStore.namaLengkap">{{ authStore.namaLengkap }}</span>
-            <span class="peran-user-sidebar">{{ authStore.peran }}</span>
+            <span class="peran-user-sidebar">{{ authStore.namaPengguna || 'kasir' }}@kasirku.id</span>
           </div>
           <button 
             type="button" 
@@ -207,7 +246,7 @@ function keluar() {
             @click="keluar" 
             title="Keluar dari akun kasir"
           >
-            <LogOut :size="16" />
+            <LogOut :size="15" />
           </button>
         </div>
       </div>
@@ -239,13 +278,13 @@ function keluar() {
   left: 0;
   bottom: 0;
   width: 260px;
-  background: #ffffff;
-  border-right: 1.5px solid #f1f5f9;
+  background: #f8f9fa;
+  border-right: 1px solid #eaedf2;
   display: flex;
   flex-direction: column;
   z-index: 999;
   transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.04);
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.02);
 }
 
 /* Keadaan Tertutup & Terbuka di Desktop */
@@ -274,11 +313,11 @@ function keluar() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 18px;
+  padding: 14px 16px;
   height: 60px;
-  border-bottom: 1.5px solid #f1f5f9;
+  border-bottom: 1px solid #eaedf2;
   flex-shrink: 0;
-  background: #ffffff;
+  background: #f8f9fa;
 }
 
 .brand-sidebar {
@@ -290,17 +329,17 @@ function keluar() {
 }
 
 .logo-badge-sidebar {
-  width: 34px;
-  height: 34px;
-  background: #2563eb;
+  width: 36px;
+  height: 36px;
+  background: #6366f1;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 900;
+  font-weight: 800;
   font-size: 1.15rem;
   border-radius: 10px;
-  box-shadow: none;
+  box-shadow: 0 1px 2px rgba(99, 102, 241, 0.2);
 }
 
 .brand-text {
@@ -309,8 +348,8 @@ function keluar() {
 }
 
 .brand-nama {
-  font-size: 1.1rem;
-  font-weight: 900;
+  font-size: 1.05rem;
+  font-weight: 800;
   color: #0f172a;
   line-height: 1.15;
   letter-spacing: -0.02em;
@@ -318,9 +357,9 @@ function keluar() {
 
 .brand-tagline {
   font-size: 0.68rem;
-  color: #2563eb;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  color: #64748b;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .btn-tutup-sidebar {
@@ -341,20 +380,90 @@ function keluar() {
   color: #0f172a;
 }
 
+/* Kotak Pencarian Menu Cepat ala Confidency OS */
+.sidebar-search-area {
+  padding: 12px 14px 6px 14px;
+  flex-shrink: 0;
+}
+
+.sidebar-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid #eaedf2;
+  border-radius: 9px;
+  padding: 6px 10px;
+  transition: all 0.15s ease;
+}
+
+.sidebar-search-box:focus-within {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 1px #6366f1;
+}
+
+.ikon-search-sidebar {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.input-search-sidebar {
+  border: none;
+  background: transparent;
+  font-size: 0.8rem;
+  color: #0f172a;
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+}
+
+.kbd-sidebar {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #94a3b8;
+  background: #f8f9fa;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 1.5px 5px;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.btn-bersih-cari-sidebar {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.btn-bersih-cari-sidebar:hover {
+  color: #0f172a;
+}
+
+.menu-kosong-sidebar {
+  padding: 24px 12px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
 /* Navigasi Scrollable (Banyak Menu) */
 .nav-sidebar-scroll {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 12px;
+  padding: 12px 12px;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 #f8fafc;
 }
 
 .nav-sidebar-scroll::-webkit-scrollbar {
-  width: 5px;
+  width: 4px;
 }
 .nav-sidebar-scroll::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #e2e8f0;
   border-radius: 4px;
 }
 
@@ -362,36 +471,36 @@ function keluar() {
 .grup-menu-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .mt-4 {
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
 .label-grup {
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   color: #94a3b8;
-  padding: 4px 10px 6px 10px;
+  padding: 6px 10px 4px 10px;
   text-transform: uppercase;
 }
 
-/* Item Menu Sidebar (Aesthetic Blue & White - No Glow) */
+/* Item Menu Sidebar: Clean Floating Card ala Confidency OS */
 .item-menu-sidebar {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  color: #475569;
+  padding: 8px 12px;
+  border-radius: 9px;
+  color: #64748b;
   text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 600;
-  transition: all 0.18s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   width: 100%;
   cursor: pointer;
   text-align: left;
@@ -400,20 +509,20 @@ function keluar() {
 }
 
 .item-menu-sidebar:hover {
-  background: #eff6ff;
-  color: #2563eb;
-  transform: translateX(2px);
+  background: #f1f5f9;
+  color: #0f172a;
 }
 
 .item-menu-sidebar.aktif {
-  background: #2563eb;
-  color: #ffffff;
+  background: #ffffff;
+  border: 1px solid #eaedf2;
+  color: #0f172a;
   font-weight: 700;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .ikon-wrapper {
-  width: 24px;
+  width: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -422,7 +531,7 @@ function keluar() {
 }
 
 .item-menu-sidebar.aktif .ikon-wrapper {
-  color: #ffffff;
+  color: #6366f1;
 }
 
 .teks-menu {
@@ -440,33 +549,33 @@ function keluar() {
 
 /* Badge Donasi */
 .btn-menu-donasi:hover .ikon-donasi {
-  color: #2563eb;
+  color: #6366f1;
 }
 
 .badge-tabungan-sidebar {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  background: #eff6ff;
-  color: #2563eb;
-  border: 1px solid #bfdbfe;
-  padding: 2px 7px;
-  border-radius: 9999px;
-  font-size: 0.68rem;
+  background: #eef2ff;
+  color: #6366f1;
+  border: 1px solid #c7d2fe;
+  padding: 1.5px 6px;
+  border-radius: 6px;
+  font-size: 0.65rem;
   font-weight: 700;
 }
 
 .item-menu-sidebar.aktif .badge-tabungan-sidebar {
-  background: rgba(255, 255, 255, 0.22);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.35);
+  background: #eef2ff;
+  color: #4f46e5;
+  border-color: #c7d2fe;
 }
 
 .teks-emas {
-  color: #2563eb;
+  color: #6366f1;
 }
 .item-menu-sidebar.aktif .teks-emas {
-  color: #ffffff;
+  color: #6366f1;
 }
 
 /* Badge Peringatan Gagal Sync */
@@ -484,9 +593,9 @@ function keluar() {
 
 /* Footer Sidebar: User Area */
 .footer-sidebar {
-  padding: 12px;
-  border-top: 1.5px solid #f1f5f9;
-  background: #f8fafc;
+  padding: 12px 14px;
+  border-top: 1px solid #eaedf2;
+  background: #f8f9fa;
   flex-shrink: 0;
 }
 
@@ -494,23 +603,24 @@ function keluar() {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
+  padding: 6px 6px;
   border-radius: 10px;
-  background: #ffffff;
-  border: 1.5px solid #e2e8f0;
+  background: transparent;
+  border: none;
 }
 
 .avatar-user-sidebar {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  background: #2563eb;
-  color: #ffffff;
+  background: #e0e7ff;
+  color: #4338ca;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   box-shadow: none;
+  font-weight: 700;
 }
 
 .detail-user-sidebar {
@@ -531,9 +641,8 @@ function keluar() {
 
 .peran-user-sidebar {
   font-size: 0.68rem;
-  color: #2563eb;
-  font-weight: 700;
-  text-transform: capitalize;
+  color: #64748b;
+  font-weight: 500;
 }
 
 .btn-logout-sidebar {
