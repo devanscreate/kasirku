@@ -22,6 +22,13 @@ from app.skema.skema_produk import (
     ResponsSinkronKatalog
 )
 from app.keamanan.autentikasi import dapatkan_pengguna_saat_ini, wajib_peran
+from app.layanan.layanan_storage import (
+    proses_dan_unggah_foto,
+    hapus_berkas_s3,
+    unggah_berkas_bytes
+)
+import os
+import uuid
 
 router = APIRouter(tags=["Produk & Sinkronisasi"])
 
@@ -128,13 +135,16 @@ async def tambah_produk(
                 detail={"code": "DUPLICATE_BARCODE", "message": f"Barcode '{permintaan.barcode}' sudah digunakan pada produk lain."}
             )
 
+    # Proses dan unggah foto ke RustFS S3 jika dikirim sebagai Base64
+    foto_s3 = proses_dan_unggah_foto(permintaan.foto, awalan="produk")
+
     produk_baru = ModelProduk(
         id_toko=pengguna.id_toko,
         sku=permintaan.sku,
         barcode=permintaan.barcode,
         nama=permintaan.nama,
         kategori=permintaan.kategori,
-        foto=permintaan.foto,
+        foto=foto_s3,
         harga=permintaan.harga,
         harga_modal=permintaan.harga_modal,
         stok=permintaan.stok_awal,
@@ -213,7 +223,11 @@ async def ubah_produk(
     if permintaan.kategori is not None:
         produk.kategori = permintaan.kategori
     if permintaan.foto is not None:
-        produk.foto = permintaan.foto
+        if permintaan.foto != produk.foto:
+            foto_s3 = proses_dan_unggah_foto(permintaan.foto, awalan="produk")
+            if produk.foto and produk.foto != foto_s3:
+                hapus_berkas_s3(produk.foto)
+            produk.foto = foto_s3
     if permintaan.harga_modal is not None:
         produk.harga_modal = permintaan.harga_modal
     if permintaan.min_stok is not None:
@@ -359,4 +373,24 @@ async def impor_produk_csv(
         "status": "sukses",
         "jumlah_diimpor": jumlah_sukses,
         "baris_gagal": baris_gagal
+    }
+
+@router.post("/storage/upload")
+async def unggah_foto_langsung(
+    berkas: UploadFile = File(...),
+    pengguna: ModelPengguna = Depends(wajib_peran("kasir", "manajer", "owner"))
+):
+    """
+    Mengunggah berkas gambar langsung ke Object Storage RustFS.
+    Mengembalikan URL publik S3.
+    """
+    konten = await berkas.read()
+    tipe_konten = berkas.content_type or "image/webp"
+    ekstensi = os.path.splitext(berkas.filename or "")[1] or ".webp"
+    nama_objek = f"produk/{uuid.uuid4().hex}{ekstensi}"
+    url_publik = unggah_berkas_bytes(konten, nama_objek, tipe_konten)
+    return {
+        "url": url_publik,
+        "nama_objek": nama_objek,
+        "ukuran_bytes": len(konten)
     }

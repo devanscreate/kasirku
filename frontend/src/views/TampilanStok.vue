@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { panggilApi } from '../layanan/api'
 import { 
   Boxes, 
@@ -8,16 +8,28 @@ import {
   ClipboardCheck, 
   History, 
   X, 
-  AlertTriangle 
+  AlertTriangle,
+  Search,
+  RotateCcw,
+  Check,
+  Package
 } from 'lucide-vue-next'
 
-const tabAktif = ref('terima') // 'terima' | 'sesuaikan' | 'opname' | 'riwayat'
+const tabAktif = ref('daftar') // 'daftar' | 'terima' | 'sesuaikan' | 'opname' | 'riwayat'
 const daftarProduk = ref([])
 const riwayatPergerakan = ref([])
 const sedangMemuat = ref(false)
 const sedangSimpan = ref(false)
 const pesanSukses = ref('')
 const pesanError = ref('')
+
+// State Pencarian & Filter
+const kueriCariStok = ref('')
+const filterStatusStok = ref('semua') // 'semua' | 'aman' | 'menipis' | 'habis'
+const kueriCariForm = ref('')
+const kueriCariRiwayat = ref('')
+
+const formatRupiah = (val) => 'Rp ' + Number(val || 0).toLocaleString('id-ID')
 
 // Form Terima Barang
 const formTerima = ref({ id_produk: '', kuantitas: 1, harga_modal: null, catatan: '' })
@@ -27,6 +39,91 @@ const formSesuaikan = ref({ id_produk: '', perubahan_stok: 0, alasan: '' })
 
 // Form Opname Fisik
 const formOpname = ref({ id_produk: '', stok_fisik: 0, alasan: 'Stock Opname Rutin' })
+
+// Rekap hitung stok
+const hitungStok = computed(() => {
+  const semua = daftarProduk.value.length
+  let habis = 0
+  let menipis = 0
+  let aman = 0
+
+  daftarProduk.value.forEach(p => {
+    const min = p.min_stok || 5
+    if (p.stok <= 0) {
+      habis++
+    } else if (p.stok <= min) {
+      menipis++
+    } else {
+      aman++
+    }
+  })
+
+  return { semua, habis, menipis, aman }
+})
+
+// Filter data di tab Daftar Stok
+const produkStokTersaring = computed(() => {
+  let list = daftarProduk.value
+
+  // 1. Filter status stok
+  if (filterStatusStok.value === 'habis') {
+    list = list.filter(p => p.stok <= 0)
+  } else if (filterStatusStok.value === 'menipis') {
+    list = list.filter(p => p.stok > 0 && p.stok <= (p.min_stok || 5))
+  } else if (filterStatusStok.value === 'aman') {
+    list = list.filter(p => p.stok > (p.min_stok || 5))
+  }
+
+  // 2. Filter kata kunci pencarian
+  const q = kueriCariStok.value.trim().toLowerCase()
+  if (q) {
+    list = list.filter(p => 
+      (p.nama || '').toLowerCase().includes(q) ||
+      (p.sku || '').toLowerCase().includes(q) ||
+      (p.barcode || '').toLowerCase().includes(q) ||
+      (p.kategori || '').toLowerCase().includes(q)
+    )
+  }
+
+  return list
+})
+
+// Filter pilihan produk di formulir (Terima, Sesuaikan, Opname)
+const produkFormTersaring = computed(() => {
+  const q = kueriCariForm.value.trim().toLowerCase()
+  if (!q) return daftarProduk.value
+  return daftarProduk.value.filter(p => 
+    (p.nama || '').toLowerCase().includes(q) ||
+    (p.sku || '').toLowerCase().includes(q) ||
+    (p.barcode || '').toLowerCase().includes(q) ||
+    (p.kategori || '').toLowerCase().includes(q)
+  )
+})
+
+// Filter riwayat pergerakan stok
+const riwayatPergerakanTersaring = computed(() => {
+  const q = kueriCariRiwayat.value.trim().toLowerCase()
+  if (!q) return riwayatPergerakan.value
+  return riwayatPergerakan.value.filter(m => 
+    (m.nama_produk || '').toLowerCase().includes(q) ||
+    (m.alasan || '').toLowerCase().includes(q) ||
+    (m.dibuat_oleh || '').toLowerCase().includes(q) ||
+    (m.tipe || '').toLowerCase().includes(q)
+  )
+})
+
+function pilihAksiProduk(p, tab) {
+  tabAktif.value = tab
+  kueriCariForm.value = ''
+  if (tab === 'terima') {
+    formTerima.value.id_produk = p.id
+  } else if (tab === 'sesuaikan') {
+    formSesuaikan.value.id_produk = p.id
+  } else if (tab === 'opname') {
+    formOpname.value.id_produk = p.id
+    formOpname.value.stok_fisik = p.stok
+  }
+}
 
 async function muatData() {
   sedangMemuat.value = true
@@ -38,10 +135,12 @@ async function muatData() {
     daftarProduk.value = prod
     riwayatPergerakan.value = movements
     if (prod.length > 0) {
-      formTerima.value.id_produk = prod[0].id
-      formSesuaikan.value.id_produk = prod[0].id
-      formOpname.value.id_produk = prod[0].id
-      formOpname.value.stok_fisik = prod[0].stok
+      if (!formTerima.value.id_produk) formTerima.value.id_produk = prod[0].id
+      if (!formSesuaikan.value.id_produk) formSesuaikan.value.id_produk = prod[0].id
+      if (!formOpname.value.id_produk) {
+        formOpname.value.id_produk = prod[0].id
+        formOpname.value.stok_fisik = prod[0].stok
+      }
     }
   } catch (err) {
     pesanError.value = 'Gagal memuat data stok dari server'
@@ -127,18 +226,19 @@ function padaGantiProdukOpname() {
     formOpname.value.stok_fisik = p.stok
   }
 }
-  function teksTipePergerakan(tipe) {
-    switch (tipe) {
-      case 'receive': return 'Barang Masuk'
-      case 'initial': return 'Stok Awal'
-      case 'sale': return 'Penjualan POS'
-      case 'adjust': return 'Penyesuaian'
-      case 'opname': return 'Stock Opname'
-      case 'return': return 'Retur Barang'
-      case 'void': return 'Void Batal'
-      default: return tipe ? tipe.toUpperCase() : '-'
-    }
+
+function teksTipePergerakan(tipe) {
+  switch (tipe) {
+    case 'receive': return 'Barang Masuk'
+    case 'initial': return 'Stok Awal'
+    case 'sale': return 'Penjualan POS'
+    case 'adjust': return 'Penyesuaian'
+    case 'opname': return 'Stock Opname'
+    case 'return': return 'Retur Barang'
+    case 'void': return 'Void Batal'
+    default: return tipe ? tipe.toUpperCase() : '-'
   }
+}
 </script>
 
 <template>
@@ -149,14 +249,30 @@ function padaGantiProdukOpname() {
         <div class="header-info">
           <div>
             <h1 class="judul-halaman">Manajemen Stok</h1>
-            <p class="sub-halaman">Penerimaan pasokan barang baru, penyesuaian barang rusak/hilang, dan stock opname fisik.</p>
+            <p class="sub-halaman">Pantau ketersediaan barang, penerimaan pasokan baru, koreksi kerusakan, dan stock opname fisik.</p>
           </div>
         </div>
+        <button type="button" class="tombol-segarkan" @click="muatData" :disabled="sedangMemuat" title="Segarkan data stok terbaru">
+          <RotateCcw :size="14" :class="{ 'animasi-putar': sedangMemuat }" />
+          <span>{{ sedangMemuat ? 'Memuat...' : 'Segarkan Data' }}</span>
+        </button>
       </div>
 
       <!-- Tab Navigasi Stok -->
       <div class="tab-stok mt-4">
         <button 
+          type="button"
+          class="btn-tab tab-daftar" 
+          :class="{ 'aktif': tabAktif === 'daftar' }" 
+          @click="tabAktif = 'daftar'"
+        >
+          <Boxes :size="15" />
+          <span>Daftar Stok</span>
+          <span class="badge-tab-hitung font-angka">{{ daftarProduk.length }}</span>
+        </button>
+
+        <button 
+          type="button"
           class="btn-tab tab-terima" 
           :class="{ 'aktif': tabAktif === 'terima' }" 
           @click="tabAktif = 'terima'"
@@ -166,6 +282,7 @@ function padaGantiProdukOpname() {
         </button>
 
         <button 
+          type="button"
           class="btn-tab tab-sesuaikan" 
           :class="{ 'aktif': tabAktif === 'sesuaikan' }" 
           @click="tabAktif = 'sesuaikan'"
@@ -175,6 +292,7 @@ function padaGantiProdukOpname() {
         </button>
 
         <button 
+          type="button"
           class="btn-tab tab-opname" 
           :class="{ 'aktif': tabAktif === 'opname' }" 
           @click="tabAktif = 'opname'"
@@ -184,6 +302,7 @@ function padaGantiProdukOpname() {
         </button>
 
         <button 
+          type="button"
           class="btn-tab tab-riwayat" 
           :class="{ 'aktif': tabAktif === 'riwayat' }" 
           @click="tabAktif = 'riwayat'"
@@ -199,6 +318,169 @@ function padaGantiProdukOpname() {
       </div>
       <div v-if="pesanError" class="peringatan-error mt-3">{{ pesanError }}</div>
 
+      <!-- TAB 0: DAFTAR STOK BARANG & KOLOM PENCARIAN UTAMA -->
+      <div v-if="tabAktif === 'daftar'" class="konten-tab mt-4">
+        <!-- Bar Pencarian Stok Cepat & Filter Status -->
+        <div class="bar-pencarian-stok">
+          <div class="input-cari-stok-wrap">
+            <Search :size="16" class="ikon-cari-stok" />
+            <input 
+              v-model="kueriCariStok" 
+              type="text" 
+              class="input-cari-stok" 
+              placeholder="Cari nama barang, barcode, SKU, atau kategori..." 
+            />
+            <button v-if="kueriCariStok" class="btn-bersih-cari" @click="kueriCariStok = ''" title="Hapus pencarian">✕</button>
+          </div>
+
+          <!-- Filter Status Stok Pills -->
+          <div class="filter-stok-pills">
+            <button 
+              type="button"
+              class="pill-stok" 
+              :class="{ 'aktif': filterStatusStok === 'semua' }"
+              @click="filterStatusStok = 'semua'"
+            >
+              <span>Semua</span>
+              <span class="badge-hitung-stok font-angka">{{ hitungStok.semua }}</span>
+            </button>
+            <button 
+              type="button"
+              class="pill-stok pill-habis" 
+              :class="{ 'aktif': filterStatusStok === 'habis' }"
+              @click="filterStatusStok = 'habis'"
+            >
+              <span>Stok Habis</span>
+              <span class="badge-hitung-stok font-angka">{{ hitungStok.habis }}</span>
+            </button>
+            <button 
+              type="button"
+              class="pill-stok pill-menipis" 
+              :class="{ 'aktif': filterStatusStok === 'menipis' }"
+              @click="filterStatusStok = 'menipis'"
+            >
+              <span>Menipis</span>
+              <span class="badge-hitung-stok font-angka">{{ hitungStok.menipis }}</span>
+            </button>
+            <button 
+              type="button"
+              class="pill-stok pill-aman" 
+              :class="{ 'aktif': filterStatusStok === 'aman' }"
+              @click="filterStatusStok = 'aman'"
+            >
+              <span>Stok Aman</span>
+              <span class="badge-hitung-stok font-angka">{{ hitungStok.aman }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabel Ringkasan Stok Produk -->
+        <div class="tabel-wadah mt-3">
+          <table class="tabel-data">
+            <thead>
+              <tr>
+                <th style="width: 48px;">No</th>
+                <th>Produk</th>
+                <th>SKU & Barcode</th>
+                <th>Kategori</th>
+                <th class="text-right">Sisa Stok</th>
+                <th class="text-right">Min. Stok</th>
+                <th class="text-center">Status</th>
+                <th class="text-center">Aksi Cepat</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(p, index) in produkStokTersaring" :key="p.id" class="baris-stok-item">
+                <td class="teks-redup font-angka">{{ index + 1 }}</td>
+                <td>
+                  <div class="flex items-center gap-3">
+                    <div class="foto-mini-stok">
+                      <img v-if="p.foto" :src="p.foto" :alt="p.nama" class="img-mini-stok" />
+                      <div v-else class="foto-mini-placeholder font-angka">
+                        {{ (p.nama || 'P').charAt(0).toUpperCase() }}
+                      </div>
+                    </div>
+                    <div>
+                      <div class="nama-produk-tabel">{{ p.nama }}</div>
+                      <div class="harga-tabel font-angka">{{ formatRupiah(p.harga) }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="font-angka teks-sku">{{ p.sku || '-' }}</div>
+                  <div v-if="p.barcode" class="teks-barcode font-angka">{{ p.barcode }}</div>
+                </td>
+                <td>
+                  <span class="badge-kategori-tabel">{{ p.kategori || 'Umum' }}</span>
+                </td>
+                <td class="text-right">
+                  <span 
+                    class="font-angka angka-stok-utama" 
+                    :class="{ 
+                      'habis': p.stok <= 0, 
+                      'menipis': p.stok > 0 && p.stok <= (p.min_stok || 5),
+                      'aman': p.stok > (p.min_stok || 5)
+                    }"
+                  >
+                    {{ p.stok }}
+                  </span>
+                </td>
+                <td class="text-right font-angka teks-redup">
+                  {{ p.min_stok || 0 }}
+                </td>
+                <td class="text-center">
+                  <span 
+                    class="badge-status-stok"
+                    :class="{
+                      'status-habis': p.stok <= 0,
+                      'status-menipis': p.stok > 0 && p.stok <= (p.min_stok || 5),
+                      'status-aman': p.stok > (p.min_stok || 5)
+                    }"
+                  >
+                    {{ p.stok <= 0 ? 'Habis (0)' : (p.stok <= (p.min_stok || 5) ? 'Menipis' : 'Aman') }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <div class="aksi-cepat-stok">
+                    <button 
+                      type="button" 
+                      class="btn-aksi-cepat btn-cepat-terima"
+                      @click="pilihAksiProduk(p, 'terima')"
+                      title="Tambah stok dari penerimaan barang"
+                    >
+                      + Terima
+                    </button>
+                    <button 
+                      type="button" 
+                      class="btn-aksi-cepat btn-cepat-sesuaikan"
+                      @click="pilihAksiProduk(p, 'sesuaikan')"
+                      title="Koreksi stok barang rusak / hilang"
+                    >
+                      Sesuaikan
+                    </button>
+                    <button 
+                      type="button" 
+                      class="btn-aksi-cepat btn-cepat-opname"
+                      @click="pilihAksiProduk(p, 'opname')"
+                      title="Tetapkan hasil hitung stok fisik"
+                    >
+                      Opname
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="produkStokTersaring.length === 0">
+                <td colspan="8" class="text-center p-8 teks-kosong">
+                  <Boxes :size="36" class="mb-2 teks-pudar" />
+                  <div class="tebal">Tidak ada produk yang cocok dengan pencarian</div>
+                  <div class="sub-kosong">Coba periksa kata kunci pencarian atau ubah filter status stok.</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- TAB 1: TERIMA BARANG -->
       <div v-if="tabAktif === 'terima'" class="konten-tab mt-4">
         <div class="panduan-tab-box panduan-hijau">
@@ -207,9 +489,27 @@ function padaGantiProdukOpname() {
 
         <form @submit.prevent="kirimTerima" class="form-stok mt-4">
           <div class="grup-form">
-            <label class="label-form">Pilih Produk yang Masuk*</label>
+            <div class="flex justify-between items-center mb-1">
+              <label class="label-form">Cari & Pilih Produk yang Masuk*</label>
+              <span v-if="kueriCariForm" class="teks-info-filter font-angka">
+                Ditemukan {{ produkFormTersaring.length }} produk
+              </span>
+            </div>
+            
+            <!-- Kolom Search Cepat Produk -->
+            <div class="input-cari-wrap-mini mb-2">
+              <Search :size="15" class="ikon-cari-mini" />
+              <input 
+                v-model="kueriCariForm" 
+                type="text" 
+                class="input-teks input-cari-mini" 
+                placeholder="Ketik untuk mencari nama produk, SKU, barcode..." 
+              />
+              <button v-if="kueriCariForm" type="button" class="btn-bersih-cari" @click="kueriCariForm = ''">✕</button>
+            </div>
+
             <select v-model="formTerima.id_produk" class="input-pilihan select-tebal">
-              <option v-for="p in daftarProduk" :key="p.id" :value="p.id">
+              <option v-for="p in produkFormTersaring" :key="p.id" :value="p.id">
                 {{ p.nama }} — [Stok Saat Ini: {{ p.stok }} Unit | SKU: {{ p.sku }}]
               </option>
             </select>
@@ -246,9 +546,27 @@ function padaGantiProdukOpname() {
 
         <form @submit.prevent="kirimSesuaikan" class="form-stok mt-4">
           <div class="grup-form">
-            <label class="label-form">Pilih Produk yang Disesuaikan*</label>
+            <div class="flex justify-between items-center mb-1">
+              <label class="label-form">Cari & Pilih Produk yang Disesuaikan*</label>
+              <span v-if="kueriCariForm" class="teks-info-filter font-angka">
+                Ditemukan {{ produkFormTersaring.length }} produk
+              </span>
+            </div>
+            
+            <!-- Kolom Search Cepat Produk -->
+            <div class="input-cari-wrap-mini mb-2">
+              <Search :size="15" class="ikon-cari-mini" />
+              <input 
+                v-model="kueriCariForm" 
+                type="text" 
+                class="input-teks input-cari-mini" 
+                placeholder="Ketik untuk mencari nama produk, SKU, barcode..." 
+              />
+              <button v-if="kueriCariForm" type="button" class="btn-bersih-cari" @click="kueriCariForm = ''">✕</button>
+            </div>
+
             <select v-model="formSesuaikan.id_produk" class="input-pilihan select-tebal">
-              <option v-for="p in daftarProduk" :key="p.id" :value="p.id">
+              <option v-for="p in produkFormTersaring" :key="p.id" :value="p.id">
                 {{ p.nama }} — [Stok Saat Ini: {{ p.stok }} Unit | SKU: {{ p.sku }}]
               </option>
             </select>
@@ -295,9 +613,27 @@ function padaGantiProdukOpname() {
 
         <form @submit.prevent="kirimOpname" class="form-stok">
           <div class="grup-form">
-            <label class="label-form">Pilih Produk yang Dihitung*</label>
+            <div class="flex justify-between items-center mb-1">
+              <label class="label-form">Cari & Pilih Produk yang Dihitung*</label>
+              <span v-if="kueriCariForm" class="teks-info-filter font-angka">
+                Ditemukan {{ produkFormTersaring.length }} produk
+              </span>
+            </div>
+            
+            <!-- Kolom Search Cepat Produk -->
+            <div class="input-cari-wrap-mini mb-2">
+              <Search :size="15" class="ikon-cari-mini" />
+              <input 
+                v-model="kueriCariForm" 
+                type="text" 
+                class="input-teks input-cari-mini" 
+                placeholder="Ketik untuk mencari nama produk, SKU, barcode..." 
+              />
+              <button v-if="kueriCariForm" type="button" class="btn-bersih-cari" @click="kueriCariForm = ''">✕</button>
+            </div>
+
             <select v-model="formOpname.id_produk" class="input-pilihan select-tebal" @change="padaGantiProdukOpname">
-              <option v-for="p in daftarProduk" :key="p.id" :value="p.id">
+              <option v-for="p in produkFormTersaring" :key="p.id" :value="p.id">
                 {{ p.nama }} — [Stok Sistem: {{ p.stok }} Unit | SKU: {{ p.sku }}]
               </option>
             </select>
@@ -322,6 +658,20 @@ function padaGantiProdukOpname() {
 
       <!-- TAB 4: BUKU BESAR PERGERAKAN STOK -->
       <div v-if="tabAktif === 'riwayat'" class="konten-tab mt-4">
+        <!-- Kolom Pencarian Riwayat Mutasi -->
+        <div class="bar-pencarian-stok mb-3">
+          <div class="input-cari-stok-wrap">
+            <Search :size="16" class="ikon-cari-stok" />
+            <input 
+              v-model="kueriCariRiwayat" 
+              type="text" 
+              class="input-cari-stok" 
+              placeholder="Cari riwayat pergerakan berdasarkan nama barang, alasan, atau PIC..." 
+            />
+            <button v-if="kueriCariRiwayat" class="btn-bersih-cari" @click="kueriCariRiwayat = ''">✕</button>
+          </div>
+        </div>
+
         <div class="tabel-wadah">
           <table class="tabel-data">
             <thead>
@@ -335,7 +685,7 @@ function padaGantiProdukOpname() {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="m in riwayatPergerakan" :key="m.id" class="baris-mutasi">
+              <tr v-for="m in riwayatPergerakanTersaring" :key="m.id" class="baris-mutasi">
                 <td class="teks-waktu">{{ new Date(m.dibuat_pada).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) }}</td>
                 <td><span class="tebal teks-nama-item">{{ m.nama_produk }}</span></td>
                 <td>
@@ -362,10 +712,10 @@ function padaGantiProdukOpname() {
                   <span class="badge-pic">{{ m.dibuat_oleh || 'Sistem' }}</span>
                 </td>
               </tr>
-              <tr v-if="riwayatPergerakan.length === 0">
+              <tr v-if="riwayatPergerakanTersaring.length === 0">
                 <td colspan="6" class="text-center p-8 teks-kosong">
                   <History :size="40" class="mb-2 teks-pudar" />
-                  <div class="tebal">Belum Ada Riwayat Pergerakan Stok</div>
+                  <div class="tebal">Belum Ada Riwayat Pergerakan Stok yang Cocok</div>
                   <div class="sub-kosong">Aktivitas penjualan, penerimaan, dan opname barang akan tercatat otomatis di sini.</div>
                 </td>
               </tr>
@@ -458,6 +808,65 @@ function padaGantiProdukOpname() {
 .btn-tab:hover {
   background: #e2e8f0;
   color: #0f172a;
+}
+
+.tab-daftar.aktif {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.badge-tab-hitung {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.08);
+  color: inherit;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.tab-daftar.aktif .badge-tab-hitung {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.tombol-segarkan {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #f1f5f9;
+  border: 1.5px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  color: #334155;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tombol-segarkan:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.tombol-segarkan:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.animasi-putar {
+  animation: putar 1s linear infinite;
+}
+
+@keyframes putar {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .tab-terima.aktif {
@@ -735,4 +1144,375 @@ function padaGantiProdukOpname() {
 .mb-4 { margin-bottom: 16px; }
 .p-8 { padding: 32px; }
 .text-center { text-align: center; }
+
+/* Bar Pencarian Stok & Filter */
+.bar-pencarian-stok {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.input-cari-stok-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 280px;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  padding: 0 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-cari-stok-wrap:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.ikon-cari-stok {
+  color: #64748b;
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+
+.input-cari-stok {
+  width: 100%;
+  padding: 10px 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.875rem;
+  color: #0f172a;
+}
+
+.input-cari-stok::placeholder {
+  color: #94a3b8;
+}
+
+.btn-bersih-cari {
+  border: none;
+  background: #e2e8f0;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+.btn-bersih-cari:hover {
+  background: #cbd5e1;
+  color: #0f172a;
+}
+
+/* Filter Status Stok Pills */
+.filter-stok-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pill-stok {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pill-stok:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.pill-stok.aktif {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
+}
+
+.pill-habis.aktif {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #ffffff;
+}
+
+.pill-menipis.aktif {
+  background: #d97706;
+  border-color: #d97706;
+  color: #ffffff;
+}
+
+.pill-aman.aktif {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #ffffff;
+}
+
+.badge-hitung-stok {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.pill-stok.aktif .badge-hitung-stok {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+/* Mini Thumbnail & Cell details in Stock Table */
+.baris-stok-item:hover {
+  background-color: #f8fafc;
+}
+
+.foto-mini-stok {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.img-mini-stok {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.foto-mini-placeholder {
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #64748b;
+}
+
+.nama-produk-tabel {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 0.875rem;
+}
+
+.harga-tabel {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.teks-sku {
+  font-size: 0.82rem;
+  color: #334155;
+  font-weight: 600;
+}
+
+.teks-barcode {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.badge-kategori-tabel {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.angka-stok-utama {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.angka-stok-utama.habis {
+  color: #dc2626;
+}
+
+.angka-stok-utama.menipis {
+  color: #d97706;
+}
+
+.angka-stok-utama.aman {
+  color: #16a34a;
+}
+
+.badge-status-stok {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.status-habis {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.status-menipis {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fcd34d;
+}
+
+.status-aman {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+/* Quick Action Buttons in Stock Table */
+.aksi-cepat-stok {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-aksi-cepat {
+  padding: 5px 9px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-cepat-terima {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+
+.btn-cepat-terima:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.btn-cepat-sesuaikan {
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+.btn-cepat-sesuaikan:hover {
+  background: #fef3c7;
+  border-color: #fcd34d;
+}
+
+.btn-cepat-opname {
+  background: #f3e8ff;
+  color: #7c3aed;
+  border-color: #e9d5ff;
+}
+
+.btn-cepat-opname:hover {
+  background: #ede9fe;
+  border-color: #c4b5fd;
+}
+
+/* Mini Quick Search in Operation Forms */
+.input-cari-wrap-mini {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  padding: 0 10px;
+  transition: border-color 0.2s ease;
+}
+
+.input-cari-wrap-mini:focus-within {
+  border-color: #2563eb;
+}
+
+.ikon-cari-mini {
+  color: #94a3b8;
+  flex-shrink: 0;
+  margin-right: 6px;
+}
+
+.input-cari-mini {
+  width: 100%;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.8125rem;
+  color: #0f172a;
+}
+
+.input-cari-mini::placeholder {
+  color: #94a3b8;
+}
+
+.teks-info-filter {
+  font-size: 0.75rem;
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.peringatan-error {
+  background: #fef2f2;
+  border: 1.5px solid #fca5a5;
+  color: #b91c1c;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.teks-redup {
+  color: #94a3b8;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.gap-3 {
+  gap: 12px;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
 </style>

@@ -35,6 +35,10 @@ async def masa_hidup_aplikasi(app: FastAPI):
     async with PembuatSesiAsync() as sesi:
         await inisialisasi_data_awal(sesi)
 
+    # Pastikan bucket RustFS S3 tersedia
+    from app.layanan.layanan_storage import pastikan_bucket_tersedia
+    pastikan_bucket_tersedia()
+
     yield
 
     # Tutup koneksi engine database saat shutdown
