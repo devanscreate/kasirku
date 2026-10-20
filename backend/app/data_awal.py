@@ -6,13 +6,14 @@ from app.model.entitas import (
     ModelPengguna,
     ModelProduk,
     ModelPergerakanStok,
+    ModelTabunganDonasi,
     waktu_sekarang_utc
 )
 from app.keamanan.autentikasi import buat_hash_kata_sandi
 
 async def inisialisasi_data_awal(sesi: AsyncSession):
     """
-    Mengisi data awal demo: Toko, Pengguna (kasir, manajer, owner), dan Produk ritel
+    Mengisi data awal demo: Toko, Pengguna (kasir, manajer, owner), Produk ritel, dan Pelanggan Donasi
     """
     # 1. Cek Toko
     kueri_toko = select(ModelToko)
@@ -109,5 +110,69 @@ async def inisialisasi_data_awal(sesi: AsyncSession):
                 dibuat_pada=waktu_sekarang_utc()
             )
             sesi.add(pergerakan)
+
+    # 4. Dummy Data Pelanggan & Tabungan Donasi Kembalian
+    kueri_donasi = select(ModelTabunganDonasi)
+    ada_donasi = (await sesi.execute(kueri_donasi)).scalars().first()
+
+    if not ada_donasi:
+        daftar_dummy_pelanggan = [
+            {
+                "hp": "081234567891",
+                "nama": "Ibu Siti Rahmawati",
+                "mutasi": [
+                    {"tipe": "setor_kembalian", "nominal": 2500, "struk": "TRX-DEMO-001", "catatan": "Donasi kembalian beras"},
+                    {"tipe": "setor_kembalian", "nominal": 5000, "struk": "TRX-DEMO-002", "catatan": "Donasi kembalian minyak"},
+                    {"tipe": "setor_kembalian", "nominal": 15000, "struk": "TRX-DEMO-005", "catatan": "Tabungan kembalian sembako"}
+                ]
+            },
+            {
+                "hp": "081388776655",
+                "nama": "Pak Hendra Wijaya",
+                "mutasi": [
+                    {"tipe": "setor_kembalian", "nominal": 10000, "struk": "TRX-DEMO-003", "catatan": "Tabungan kembalian belanja"},
+                    {"tipe": "setor_kembalian", "nominal": 25000, "struk": "TRX-DEMO-007", "catatan": "Tabungan kembalian sembako"},
+                    {"tipe": "potong_belanja", "nominal": 10000, "struk": "TRX-DEMO-009", "catatan": "Potongan belanjaan kasir POS"}
+                ]
+            },
+            {
+                "hp": "085712349988",
+                "nama": "Ahmad Fauzi",
+                "mutasi": [
+                    {"tipe": "setor_kembalian", "nominal": 3000, "struk": "TRX-DEMO-004", "catatan": "Donasi kembalian belanja mie"},
+                    {"tipe": "setor_kembalian", "nominal": 1500, "struk": "TRX-DEMO-006", "catatan": "Donasi kembalian kopi"}
+                ]
+            },
+            {
+                "hp": "082199887766",
+                "nama": "Dewi Lestari",
+                "mutasi": [
+                    {"tipe": "setor_kembalian", "nominal": 50000, "struk": "TRX-DEMO-008", "catatan": "Tabungan kembalian belanja bulanan"},
+                    {"tipe": "cair_tunai", "nominal": 20000, "struk": None, "catatan": "Pencairan tunai saldo tabungan di kasir"}
+                ]
+            },
+            {
+                "hp": "087855443322",
+                "nama": "Budi Prasetyo",
+                "mutasi": [
+                    {"tipe": "setor_kembalian", "nominal": 8000, "struk": "TRX-DEMO-010", "catatan": "Donasi kembalian belanja deterjen"},
+                    {"tipe": "setor_kembalian", "nominal": 7000, "struk": "TRX-DEMO-011", "catatan": "Donasi kembalian susu kotak"}
+                ]
+            }
+        ]
+
+        for p in daftar_dummy_pelanggan:
+            for m in p["mutasi"]:
+                baru = ModelTabunganDonasi(
+                    id_toko=toko.id,
+                    nomor_hp=p["hp"],
+                    nama_pelanggan=p["nama"],
+                    tipe=m["tipe"],
+                    nominal=m["nominal"],
+                    nomor_struk=m["struk"],
+                    catatan=m["catatan"],
+                    dibuat_pada=waktu_sekarang_utc()
+                )
+                sesi.add(baru)
 
     await sesi.commit()

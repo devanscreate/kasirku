@@ -93,12 +93,9 @@ async function simpanUserBaru() {
       <!-- Header Pengaturan -->
       <div class="header-pengaturan">
         <div class="header-info">
-          <div class="ikon-header">
-            <Settings :size="26" />
-          </div>
           <div>
-            <h1 class="judul-halaman">Pengaturan Toko & Manajemen Pengguna</h1>
-            <p class="sub-halaman">Konfigurasi profil toko, aturan pajak, batas diskon kasir, printer struk, dan manajemen hak akses karyawan.</p>
+            <h1 class="judul-halaman">Pengaturan Toko & Pengguna</h1>
+            <p class="sub-halaman">Konfigurasi profil toko, aturan pajak, batas diskon kasir, printer struk, dan hak akses staf.</p>
           </div>
         </div>
       </div>
@@ -110,7 +107,7 @@ async function simpanUserBaru() {
           :class="{ 'aktif': tabPengaturan === 'toko' }" 
           @click="tabPengaturan = 'toko'"
         >
-          <Store :size="18" />
+          <Store :size="16" />
           <span>Profil Toko & Aturan POS</span>
         </button>
         <button 
@@ -118,19 +115,19 @@ async function simpanUserBaru() {
           :class="{ 'aktif': tabPengaturan === 'pengguna' }" 
           @click="tabPengaturan = 'pengguna'"
         >
-          <Users :size="18" />
-          <span>Kelola Akun Karyawan & Kasir</span>
+          <Users :size="16" />
+          <span>Kelola Akun Staf</span>
         </button>
       </div>
 
-      <div v-if="pesanSukses" class="pesan-sukses-box mt-3">✅ {{ pesanSukses }}</div>
+      <div v-if="pesanSukses" class="pesan-sukses-box mt-3">{{ pesanSukses }}</div>
       <div v-if="pesanError" class="peringatan-error mt-3">{{ pesanError }}</div>
 
       <!-- TAB PROFIL & ATURAN TOKO -->
       <div v-if="tabPengaturan === 'toko'" class="konten-tab mt-4">
         <form @submit.prevent="simpanToko" class="form-pengaturan">
           <div class="kartu-sub-pengaturan">
-            <h3 class="judul-sub">🏪 Profil Usaha / Toko</h3>
+            <h3 class="judul-sub">Profil Usaha / Toko</h3>
             <div class="grup-form mt-3">
               <label class="label-form">Nama Toko (Tercetak di Kepala Struk)*</label>
               <input v-model="toko.nama" type="text" class="input-teks input-tebal" placeholder="Contoh: Toko Berkah Jaya" required />
@@ -148,7 +145,7 @@ async function simpanUserBaru() {
           </div>
 
           <div class="kartu-sub-pengaturan mt-4">
-            <h3 class="judul-sub">⚙️ Aturan Kasir & Transaksi POS</h3>
+            <h3 class="judul-sub">Aturan Kasir & Transaksi POS</h3>
             <div class="grid-form mt-3">
               <div class="grup-form">
                 <label class="label-form">Pajak Penjualan PPN (%)</label>
@@ -189,8 +186,8 @@ async function simpanUserBaru() {
           </div>
 
           <button type="submit" class="tombol-simpan-pengaturan mt-4" :disabled="sedangSimpan">
-            <Save :size="18" />
-            <span>{{ sedangSimpan ? 'Menyimpan...' : 'Simpan Semua Pengaturan Toko' }}</span>
+            <Save :size="16" />
+            <span>{{ sedangSimpan ? 'Menyimpan...' : 'Simpan Pengaturan Toko' }}</span>
           </button>
         </form>
       </div>
@@ -203,8 +200,8 @@ async function simpanUserBaru() {
             <p class="sub-halaman">Kelola akun kasir, manajer, dan owner toko.</p>
           </div>
           <button class="tombol-tambah-user" @click="tampilModalUser = true">
-            <Plus :size="16" />
-            <span>+ Tambah Akun Karyawan</span>
+            <Plus :size="15" />
+            <span>Tambah Akun</span>
           </button>
         </div>
 
@@ -221,7 +218,7 @@ async function simpanUserBaru() {
             </thead>
             <tbody>
               <tr v-for="u in daftarUser" :key="u.id" class="baris-user">
-                <td><span class="font-angka tebal teks-username">👤 {{ u.nama_pengguna }}</span></td>
+                <td><span class="font-angka tebal teks-username">{{ u.nama_pengguna }}</span></td>
                 <td><span class="tebal teks-nama-user">{{ u.nama_lengkap }}</span></td>
                 <td>
                   <span 
@@ -232,7 +229,7 @@ async function simpanUserBaru() {
                       'peran-kasir': u.peran === 'kasir'
                     }"
                   >
-                    {{ u.peran === 'owner' ? '👑 Owner (Pemilik)' : (u.peran === 'manajer' ? '💼 Manajer' : '👤 Kasir') }}
+                    {{ u.peran === 'owner' ? 'Owner' : (u.peran === 'manajer' ? 'Manajer' : 'Kasir') }}
                   </span>
                 </td>
                 <td>
@@ -274,9 +271,9 @@ async function simpanUserBaru() {
         <div class="grup-form mt-3">
           <label class="label-form">Peran & Tingkat Hak Akses*</label>
           <select v-model="formUser.peran" class="input-pilihan select-tebal">
-            <option value="kasir">👤 Kasir (Buka/Tutup Shift, Transaksi Penjualan POS)</option>
-            <option value="manajer">💼 Manajer (Void, Retur, Kelola Produk & Stok, Laporan)</option>
-            <option value="owner">👑 Owner (Hak Akses Penuh & Kelola Semua Akun)</option>
+            <option value="kasir">Kasir (Buka/Tutup Shift, Transaksi Penjualan POS)</option>
+            <option value="manajer">Manajer (Void, Retur, Kelola Produk & Stok, Laporan)</option>
+            <option value="owner">Owner (Hak Akses Penuh & Kelola Semua Akun)</option>
           </select>
         </div>
 

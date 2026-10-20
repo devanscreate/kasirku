@@ -17,6 +17,7 @@ from app.rute.rute_stok import router as rute_stok
 from app.rute.rute_laporan import router as rute_laporan
 from app.rute.rute_pengaturan import router as rute_pengaturan
 from app.rute.rute_kesehatan import router as rute_kesehatan
+from app.rute.rute_donasi import router as rute_donasi
 
 @asynccontextmanager
 async def masa_hidup_aplikasi(app: FastAPI):
@@ -76,6 +77,7 @@ aplikasi.include_router(rute_retur, prefix="/api/v1")
 aplikasi.include_router(rute_stok, prefix="/api/v1")
 aplikasi.include_router(rute_laporan, prefix="/api/v1")
 aplikasi.include_router(rute_pengaturan, prefix="/api/v1")
+aplikasi.include_router(rute_donasi, prefix="/api/v1")
 aplikasi.include_router(rute_kesehatan, prefix="/api/v1")
 
 # Rute langsung untuk Docker / Caddy Health Check

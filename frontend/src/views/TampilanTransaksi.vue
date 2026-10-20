@@ -221,21 +221,18 @@ const countStatus = computed(() => {
       <!-- Header Halaman -->
       <div class="header-transaksi">
         <div class="header-info">
-          <div class="ikon-header">
-            <Receipt :size="26" />
-          </div>
           <div>
             <h1 class="judul-halaman">Riwayat Transaksi Penjualan</h1>
-            <p class="sub-halaman">Pantau seluruh struk kasir, cetak ulang struk fisik, proses void, dan retur barang.</p>
+            <p class="sub-halaman">Pantau seluruh struk transaksi kasir, cetak ulang struk, proses void, dan retur.</p>
           </div>
         </div>
         <button class="tombol-segarkan" @click="muatTransaksi" :disabled="sedangMemuat">
-          <RotateCcw :size="16" :class="{ 'animasi-putar': sedangMemuat }" />
-          <span>{{ sedangMemuat ? 'Memuat...' : 'Segarkan Data' }}</span>
+          <RotateCcw :size="14" :class="{ 'animasi-putar': sedangMemuat }" />
+          <span>{{ sedangMemuat ? 'Memuat...' : 'Segarkan' }}</span>
         </button>
       </div>
 
-      <!-- Quick Filter Pills (Ramah Usia 40: 1 Klik Langsung Paham) -->
+      <!-- Quick Filter Chips -->
       <div class="wadah-filter-cepat mt-4">
         <button 
           class="pill-filter" 
@@ -251,7 +248,6 @@ const countStatus = computed(() => {
           :class="{ 'aktif': filterStatus === 'completed' }"
           @click="filterStatus = 'completed'"
         >
-          <Check :size="16" />
           <span>Selesai</span>
           <span class="badge-hitung">{{ countStatus.completed }}</span>
         </button>
@@ -261,7 +257,6 @@ const countStatus = computed(() => {
           :class="{ 'aktif': filterStatus === 'voided' }"
           @click="filterStatus = 'voided'"
         >
-          <Ban :size="16" />
           <span>Batal (Void)</span>
           <span class="badge-hitung">{{ countStatus.voided }}</span>
         </button>
@@ -271,7 +266,6 @@ const countStatus = computed(() => {
           :class="{ 'aktif': filterStatus === 'partially_refunded' || filterStatus === 'refunded' }"
           @click="filterStatus = (filterStatus === 'partially_refunded' ? 'semua' : 'partially_refunded')"
         >
-          <RotateCcw :size="16" />
           <span>Retur / Refund</span>
           <span class="badge-hitung">{{ countStatus.retur }}</span>
         </button>
@@ -280,12 +274,12 @@ const countStatus = computed(() => {
       <!-- Filter Pencarian -->
       <div class="bar-filter mt-3">
         <div class="input-cari-wrap">
-          <Search :size="18" class="ikon-cari" />
+          <Search :size="16" class="ikon-cari" />
           <input 
             v-model="kueriCari" 
             type="text" 
             class="input-teks input-cari" 
-            placeholder="Ketik nomor struk untuk mencari (contoh: STR-2026...)" 
+            placeholder="Cari berdasarkan nomor struk..." 
           />
         </div>
       </div>
@@ -296,12 +290,12 @@ const countStatus = computed(() => {
           <thead>
             <tr>
               <th>No. Struk</th>
-              <th>Waktu Transaksi</th>
-              <th>Kasir Bertugas</th>
-              <th>Total Pembayaran</th>
-              <th>Status Transaksi</th>
-              <th>Sinkron Cloud</th>
-              <th class="text-center">Aksi Cepat</th>
+              <th>Waktu</th>
+              <th>Kasir</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Sinkronisasi</th>
+              <th class="text-center">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -314,7 +308,7 @@ const countStatus = computed(() => {
               </td>
               <td>
                 <span class="badge-kasir">
-                  👤 {{ tx.nama_kasir || 'Kasir' }}
+                  {{ tx.nama_kasir || 'Kasir' }}
                 </span>
               </td>
               <td>
@@ -329,9 +323,6 @@ const countStatus = computed(() => {
                     'status-retur': tx.status === 'partially_refunded' || tx.status === 'refunded'
                   }"
                 >
-                  <Check v-if="tx.status === 'completed'" :size="14" />
-                  <Ban v-else-if="tx.status === 'voided'" :size="14" />
-                  <RotateCcw v-else :size="14" />
                   <span>{{ teksStatus(tx.status) }}</span>
                 </span>
               </td>
@@ -461,7 +452,7 @@ const countStatus = computed(() => {
         <div v-if="pesanError" class="peringatan-error">{{ pesanError }}</div>
 
         <div class="kotak-peringatan-bahaya">
-          ⚠️ <b>Perhatian Kasir:</b> Tindakan Void membatalkan transaksi secara permanen. Stok produk akan dikembalikan ke gudang secara otomatis dan nilai transaksi akan dikeluarkan dari omzet penjualan.
+          <b>Perhatian Kasir:</b> Tindakan Void membatalkan transaksi secara permanen. Stok produk akan dikembalikan ke gudang secara otomatis dan nilai transaksi akan dikeluarkan dari omzet penjualan.
         </div>
 
         <div class="grup-form mt-4">
@@ -538,8 +529,8 @@ const countStatus = computed(() => {
         <div class="grup-form mt-3">
           <label class="label-form">Metode Pengembalian Uang (Refund)</label>
           <select v-model="metodeRefund" class="input-pilihan">
-            <option value="tunai">💵 Tunai dari Kas Laci Kasir Aktif</option>
-            <option value="transfer">💳 Transfer Bank / Rekening</option>
+            <option value="tunai">Tunai dari Kas Laci Kasir Aktif</option>
+            <option value="transfer">Transfer Bank / Rekening</option>
           </select>
         </div>
 

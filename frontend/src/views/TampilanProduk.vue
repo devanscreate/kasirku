@@ -5,6 +5,7 @@ import { dbLokal } from '../basis_data'
 import { sinkronkanKatalogProduk } from '../layanan/sinkronisasi'
 import { kompresFotoProduk } from '../layanan/utilitas_gambar'
 import ModalPreviewFoto from '../komponen/ModalPreviewFoto.vue'
+import ModalSesuaikanFoto from '../komponen/ModalSesuaikanFoto.vue'
 import { 
   Package, 
   Plus, 
@@ -18,7 +19,9 @@ import {
   AlertCircle,
   Camera,
   Image as ImageIcon,
-  ZoomIn
+  ZoomIn,
+  Crop,
+  Barcode
 } from 'lucide-vue-next'
 
 const daftarProduk = ref([])
@@ -31,8 +34,17 @@ const tampilModalImpor = ref(false)
 const isEdit = ref(false)
 const idProdukEdit = ref(null)
 
+// Buat Barcode Otomatis untuk barang tanpa barcode kemasan pabrik (standar EAN-13 internal store)
+function buatBarcodeOtomatis() {
+  const acak = Math.floor(100000000 + Math.random() * 900000000)
+  formProduk.value.barcode = `200${acak}`
+}
+
 const tampilModalPreview = ref(false)
 const produkPreview = ref(null)
+
+const berkasFotoUntukDiatur = ref(null)
+const tampilModalSesuaikan = ref(false)
 
 function bukaPreviewProduk(p) {
   produkPreview.value = p
@@ -62,6 +74,20 @@ const sedangSimpan = ref(false)
 const pesanError = ref('')
 
 const formatRupiah = (val) => 'Rp ' + Number(val || 0).toLocaleString('id-ID')
+
+function tanganiInputHargaJual(e) {
+  const digitOnly = e.target.value.replace(/\D/g, '')
+  const num = digitOnly ? parseInt(digitOnly, 10) : 0
+  formProduk.value.harga = num
+  e.target.value = num > 0 ? num.toLocaleString('id-ID') : ''
+}
+
+function tanganiInputHargaModal(e) {
+  const digitOnly = e.target.value.replace(/\D/g, '')
+  const num = digitOnly ? parseInt(digitOnly, 10) : 0
+  formProduk.value.harga_modal = num
+  e.target.value = num > 0 ? num.toLocaleString('id-ID') : ''
+}
 
 async function muatProduk() {
   sedangMemuat.value = true
@@ -124,30 +150,41 @@ const daftarKategoriUnik = computed(() => {
 })
 
 
-// Menangani kompresi foto otomatis di sisi browser (hemat memori ~3-8 KB WebP)
-async function tanganiPilihFoto(e) {
+// Buka modal penyesuaian foto saat pengguna memilih berkas baru
+function tanganiPilihFoto(e) {
   const file = e.target.files?.[0]
   if (!file) return
 
-  sedangKompresFoto.value = true
-  pesanError.value = ''
-  try {
-    const hasil = await kompresFotoProduk(file, 200, 0.7)
-    formProduk.value.foto = hasil.dataUrl
-    infoFoto.value = {
-      kb: hasil.perkiraanKb,
-      dimensi: `${hasil.lebar}x${hasil.tinggi}`
-    }
-  } catch (err) {
-    pesanError.value = 'Gagal memproses gambar: ' + (err.message || 'Format tidak didukung')
-  } finally {
-    sedangKompresFoto.value = false
+  berkasFotoUntukDiatur.value = file
+  tampilModalSesuaikan.value = true
+  if (inputFotoRef.value) {
+    inputFotoRef.value.value = ''
   }
+}
+
+// Buka modal penyesuaian foto untuk foto yang tersimpan
+function bukaModalSesuaikanFoto() {
+  if (formProduk.value.foto) {
+    berkasFotoUntukDiatur.value = formProduk.value.foto
+    tampilModalSesuaikan.value = true
+  }
+}
+
+// Menerima hasil penyesuaian bingkai 1:1 persegi seragam (WebP hemat memori ~3-8 KB)
+function tanganiFotoSelesaiDiatur(hasil) {
+  formProduk.value.foto = hasil.dataUrl
+  infoFoto.value = {
+    kb: hasil.perkiraanKb,
+    dimensi: `${hasil.lebar}x${hasil.tinggi}`
+  }
+  tampilModalSesuaikan.value = false
+  berkasFotoUntukDiatur.value = null
 }
 
 function hapusFoto() {
   formProduk.value.foto = null
   infoFoto.value = null
+  berkasFotoUntukDiatur.value = null
   if (inputFotoRef.value) {
     inputFotoRef.value.value = ''
   }
@@ -295,36 +332,30 @@ function dapatkanKelasKategori(kat) {
       <!-- Header Halaman -->
       <div class="header-produk">
         <div class="header-info">
-          <div class="ikon-header">
-            <Package :size="26" />
-          </div>
           <div>
             <h1 class="judul-halaman">Katalog & Manajemen Produk</h1>
-            <p class="sub-halaman">Kelola data master barang dagangan toko, harga jual/modal, stok minimum, dan impor massal CSV.</p>
+            <p class="sub-halaman">Kelola data master barang dagangan, harga jual & modal, stok minimum, dan impor CSV.</p>
           </div>
         </div>
         <div class="flex gap-3">
           <button class="tombol-sekunder-biru" @click="tampilModalImpor = true">
-            <Upload :size="16" />
-            <span>Impor Data CSV</span>
+            <Upload :size="15" />
+            <span>Impor CSV</span>
           </button>
           <button class="tombol-tambah-produk" @click="bukaTambah">
-            <Plus :size="18" />
-            <span>+ Tambah Produk Baru</span>
+            <Plus :size="15" />
+            <span>Tambah Produk</span>
           </button>
         </div>
       </div>
 
-      <!-- Kategori Filter Cepat (Pill Berwarna untuk Persona 40 Tahun) -->
+      <!-- Kategori Filter Chips -->
       <div class="kategori-filter-wrap mt-4">
         <button 
           v-for="kat in daftarKategoriUnik" 
           :key="kat"
           class="pill-kategori"
-          :class="[
-            kat === 'semua' ? 'kategori-semua' : dapatkanKelasKategori(kat),
-            { 'aktif': filterKategori === kat }
-          ]"
+          :class="{ 'aktif': filterKategori === kat }"
           @click="filterKategori = kat"
         >
           <span>{{ kat === 'semua' ? 'Semua Produk' : kat }}</span>
@@ -337,12 +368,12 @@ function dapatkanKelasKategori(kat) {
       <!-- Bar Filter & Pencarian -->
       <div class="bar-filter mt-3">
         <div class="input-cari-wrap">
-          <Search :size="18" class="ikon-cari" />
+          <Search :size="16" class="ikon-cari" />
           <input 
             v-model="kueriCari" 
             type="text" 
             class="input-teks input-cari" 
-            placeholder="Cari berdasarkan nama produk, kode SKU, atau barcode..." 
+            placeholder="Cari berdasarkan nama produk, SKU, atau barcode..." 
           />
         </div>
       </div>
@@ -352,13 +383,13 @@ function dapatkanKelasKategori(kat) {
         <table class="tabel-data">
           <thead>
             <tr>
-              <th style="width: 68px;">Foto</th>
+              <th style="width: 56px;">Foto</th>
               <th>Kode / Barcode</th>
               <th>Nama Produk</th>
               <th>Kategori</th>
               <th>Harga Jual</th>
               <th>Harga Modal</th>
-              <th>Stok Tersedia</th>
+              <th>Stok</th>
               <th>Min. Stok</th>
               <th>Status</th>
               <th class="text-center">Aksi</th>
@@ -368,29 +399,25 @@ function dapatkanKelasKategori(kat) {
             <tr v-for="p in produkTerfilter" :key="p.id" class="baris-produk">
               <td>
                 <div 
-                  class="thumb-tabel-wadah" 
-                  :class="{ 'bisa-klik': true }"
+                  class="thumb-tabel-wadah bisa-klik" 
                   @click="bukaPreviewProduk(p)" 
-                  title="Klik untuk melihat pratinjau foto produk"
+                  title="Lihat foto produk"
                 >
                   <img v-if="p.foto" :src="p.foto" :alt="p.nama" class="img-thumb-tabel" loading="lazy" />
-                  <div v-else class="thumb-tabel-kosong" :class="dapatkanKelasKategori(p.kategori)">
+                  <div v-else class="thumb-tabel-kosong">
                     <span>{{ (p.nama || 'P').charAt(0).toUpperCase() }}</span>
-                  </div>
-                  <div v-if="p.foto" class="badge-zoom-hover">
-                    <ZoomIn :size="13" />
                   </div>
                 </div>
               </td>
               <td>
                 <div class="font-angka tebal teks-sku">{{ p.sku }}</div>
-                <div class="teks-barcode" v-if="p.barcode">🏷️ {{ p.barcode }}</div>
+                <div class="teks-barcode font-angka" v-if="p.barcode">{{ p.barcode }}</div>
               </td>
               <td>
                 <span class="tebal teks-nama-produk">{{ p.nama }}</span>
               </td>
               <td>
-                <span class="pill-kategori-tabel" :class="dapatkanKelasKategori(p.kategori)">
+                <span class="pill-kategori-tabel">
                   {{ p.kategori || 'Umum' }}
                 </span>
               </td>
@@ -405,8 +432,6 @@ function dapatkanKelasKategori(kat) {
                   class="lencana-stok"
                   :class="p.stok <= 0 ? 'stok-habis' : (p.stok <= p.min_stok ? 'stok-kritis' : 'stok-aman')"
                 >
-                  <AlertCircle v-if="p.stok <= p.min_stok" :size="14" />
-                  <Check v-else :size="14" />
                   <span>{{ p.stok }} Unit</span>
                   <span v-if="p.stok <= 0" class="sub-stok">(Habis)</span>
                   <span v-else-if="p.stok <= p.min_stok" class="sub-stok">(Menipis)</span>
@@ -422,12 +447,12 @@ function dapatkanKelasKategori(kat) {
               </td>
               <td>
                 <div class="flex gap-2 justify-center">
-                  <button class="btn-aksi-produk btn-edit" @click="bukaUbah(p)" title="Ubah Data Produk">
-                    <Edit :size="15" />
+                  <button class="btn-aksi-produk btn-edit" @click="bukaUbah(p)" title="Ubah Data">
+                    <Edit :size="14" />
                     <span>Ubah</span>
                   </button>
                   <button class="btn-aksi-produk btn-hapus" @click="hapusProduk(p)" title="Hapus Produk">
-                    <Trash2 :size="15" />
+                    <Trash2 :size="14" />
                     <span>Hapus</span>
                   </button>
                 </div>
@@ -467,7 +492,7 @@ function dapatkanKelasKategori(kat) {
               <span>Foto Produk</span>
             </span>
             <span v-if="infoFoto" class="badge-hemat-memori">
-              ⚡ ~{{ infoFoto.kb }} KB (Sangat Hemat Memori)
+              ~{{ infoFoto.kb }} KB
             </span>
           </label>
 
@@ -499,6 +524,16 @@ function dapatkanKelasKategori(kat) {
                 <button 
                   v-if="formProduk.foto" 
                   type="button" 
+                  class="btn-atur-foto" 
+                  @click="bukaModalSesuaikanFoto"
+                  title="Atur ukuran dan posisi bingkai persegi foto"
+                >
+                  <Crop :size="15" />
+                  <span>Atur Bingkai</span>
+                </button>
+                <button 
+                  v-if="formProduk.foto" 
+                  type="button" 
                   class="btn-hapus-foto" 
                   @click="hapusFoto"
                   title="Hapus foto produk"
@@ -518,8 +553,19 @@ function dapatkanKelasKategori(kat) {
             <input v-model="formProduk.sku" type="text" class="input-teks font-angka input-tebal" placeholder="Contoh: BRS-001" required />
           </div>
           <div class="grup-form">
-            <label class="label-form">Barcode Scanner (Opsional)</label>
-            <input v-model="formProduk.barcode" type="text" class="input-teks font-angka" placeholder="Contoh: 899123456" />
+            <div class="flex items-center justify-between mb-1">
+              <label class="label-form mb-0">Barcode Scanner (Opsional)</label>
+              <button 
+                type="button" 
+                class="btn-buat-barcode"
+                @click="buatBarcodeOtomatis"
+                title="Generate barcode acak untuk barang yang tidak punya barcode pabrik"
+              >
+                <Barcode :size="13" />
+                <span>Buat Barcode Acak</span>
+              </button>
+            </div>
+            <input v-model="formProduk.barcode" type="text" class="input-teks font-angka" placeholder="Arahkan scanner ke kemasan atau klik Buat Barcode" />
           </div>
         </div>
 
@@ -535,14 +581,31 @@ function dapatkanKelasKategori(kat) {
           </div>
           <div class="grup-form">
             <label class="label-form">Harga Jual Konsumen (Rp)*</label>
-            <input v-model.number="formProduk.harga" type="number" min="0" class="input-teks font-angka input-harga" placeholder="0" required />
+            <input 
+              :value="formProduk.harga > 0 ? Number(formProduk.harga).toLocaleString('id-ID') : ''" 
+              type="text" 
+              inputmode="numeric" 
+              class="input-teks font-angka input-harga" 
+              placeholder="0" 
+              required 
+              @focus="$event.target.select()"
+              @input="tanganiInputHargaJual"
+            />
           </div>
         </div>
 
         <div class="grid-form mt-3">
           <div class="grup-form">
             <label class="label-form">Harga Modal Beli (Rp)</label>
-            <input v-model.number="formProduk.harga_modal" type="number" min="0" class="input-teks font-angka" placeholder="0" />
+            <input 
+              :value="formProduk.harga_modal > 0 ? Number(formProduk.harga_modal).toLocaleString('id-ID') : ''" 
+              type="text" 
+              inputmode="numeric" 
+              class="input-teks font-angka" 
+              placeholder="0" 
+              @focus="$event.target.select()"
+              @input="tanganiInputHargaModal"
+            />
           </div>
           <div class="grup-form" v-if="!isEdit">
             <label class="label-form">Stok Awal di Toko</label>
@@ -594,7 +657,7 @@ function dapatkanKelasKategori(kat) {
             <span>Berhasil Diimpor: {{ hasilImpor.jumlah_diimpor }} produk</span>
           </div>
           <div v-if="hasilImpor.baris_gagal?.length > 0" class="teks-bahaya mt-2">
-            ⚠️ Gagal pada baris ke: {{ hasilImpor.baris_gagal.map(b => b.baris).join(', ') }}
+            Gagal pada baris: {{ hasilImpor.baris_gagal.map(b => b.baris).join(', ') }}
           </div>
         </div>
 
@@ -624,6 +687,14 @@ function dapatkanKelasKategori(kat) {
       :min-stok="produkPreview.min_stok"
       :tampilkan-aksi-keranjang="false"
       @tutup="tampilModalPreview = false" 
+    />
+
+    <!-- MODAL SESUAIKAN BINGKAI FOTO PRODUK (1:1 PERSEGI SERAGAM) -->
+    <ModalSesuaikanFoto 
+      v-if="tampilModalSesuaikan && berkasFotoUntukDiatur" 
+      :berkas="berkasFotoUntukDiatur" 
+      @selesai="tanganiFotoSelesaiDiatur" 
+      @batal="tampilModalSesuaikan = false" 
     />
   </div>
 </template>
@@ -1295,9 +1366,49 @@ function dapatkanKelasKategori(kat) {
 .btn-hapus-foto:hover {
   background: #fee2e2;
 }
+.btn-atur-foto {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1.5px solid #bfdbfe;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-atur-foto:hover {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
 .teks-sedang-kompres {
   font-size: 0.78rem;
   color: #2563eb;
   font-weight: 600;
 }
+
+.btn-buat-barcode {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 0.725rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-buat-barcode:hover {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+.mb-0 { margin-bottom: 0 !important; }
 </style>

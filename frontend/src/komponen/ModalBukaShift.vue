@@ -12,12 +12,14 @@ const kasAwal = ref(100000)
 const sedangProses = ref(false)
 const pesanError = ref('')
 
-const nominalCepat = [
-  { nilai: 50000, label: 'Rp 50.000', warna: '#0284c7', bg: '#f0f9ff', border: '#bae6fd' },
-  { nilai: 100000, label: 'Rp 100.000', warna: '#be123c', bg: '#fff1f2', border: '#fecdd3' },
-  { nilai: 200000, label: 'Rp 200.000', warna: '#15803d', bg: '#f0fdf4', border: '#bbf7d0' },
-  { nilai: 500000, label: 'Rp 500.000', warna: '#7e22ce', bg: '#faf5ff', border: '#e9d5ff' },
-]
+const nominalCepat = [50000, 100000, 200000, 500000]
+
+function tanganiInputKasAwal(e) {
+  const digitOnly = e.target.value.replace(/\D/g, '')
+  const num = digitOnly ? parseInt(digitOnly, 10) : 0
+  kasAwal.value = num
+  e.target.value = num > 0 ? num.toLocaleString('id-ID') : ''
+}
 
 async function simpanBukaShift() {
   if (kasAwal.value < 0) {
@@ -43,12 +45,9 @@ async function simpanBukaShift() {
   <div class="latar-modal">
     <div class="kotak-modal p-6">
       <div class="header-modal">
-        <div class="ikon-lingkaran">
-          <Wallet :size="32" />
-        </div>
         <div>
-          <h2 class="judul-modal">Buka Shift Kasir Baru</h2>
-          <p class="sub-modal">Masukkan uang modal receh di laci kasir untuk uang kembalian.</p>
+          <h2 class="judul-modal">Buka Shift Kasir</h2>
+          <p class="sub-modal">Masukkan uang kas modal awal di laci kasir.</p>
         </div>
       </div>
 
@@ -57,38 +56,34 @@ async function simpanBukaShift() {
       </div>
 
       <div class="grup-form mt-4">
-        <label class="label-form">Jumlah Modal Kas Awal di Laci:</label>
+        <label class="label-form">Jumlah Modal Awal Laci:</label>
         <div class="input-wrap-besar">
           <span class="awalan-rp">Rp</span>
           <input 
-            v-model.number="kasAwal"
-            type="number"
-            min="0"
-            step="1000"
-            class="input-teks input-uang-besar"
+            :value="kasAwal > 0 ? Number(kasAwal).toLocaleString('id-ID') : ''"
+            type="text"
+            inputmode="numeric"
+            class="input-teks input-uang-besar font-angka"
             autofocus
             placeholder="0"
+            @focus="$event.target.select()"
+            @input="tanganiInputKasAwal"
             @keydown.enter="simpanBukaShift"
           />
         </div>
       </div>
 
-      <!-- Tombol Nominal Cepat Berwarna -->
-      <div class="label-cepat">Pilihan Cepat Nominal Modal:</div>
-      <div class="pilihan-nominal">
+      <!-- Tombol Nominal Cepat -->
+      <div class="pilihan-nominal mt-3">
         <button 
           v-for="nom in nominalCepat" 
-          :key="nom.nilai"
+          :key="nom"
           type="button"
-          class="btn-nominal-modal"
-          :style="{
-            backgroundColor: kasAwal === nom.nilai ? nom.warna : nom.bg,
-            color: kasAwal === nom.nilai ? '#ffffff' : nom.warna,
-            borderColor: nom.border
-          }"
-          @click="kasAwal = nom.nilai"
+          class="btn-nominal-modal font-angka"
+          :class="{ 'aktif': kasAwal === nom }"
+          @click="kasAwal = nom"
         >
-          {{ nom.label }}
+          Rp {{ Number(nom).toLocaleString('id-ID') }}
         </button>
       </div>
 

@@ -1,68 +1,57 @@
-/* ===== Kasirku - Tema Biru & Putih Estetik, Adem di Mata & Colorfull untuk Persona 40 Tahun ===== */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700;800&display=swap');
+/* ===== Kasirku - Minimalist & Professional POS Theme (Square / Shopify POS Style) ===== */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap');
 
 :root {
-  /* Latar Belakang & Panel (Biru Es Lembut & Putih Bersih - Tidak Silau, Sangat Nyaman di Mata) */
-  --warna-latar: #f0f4f9;          /* Biru es lembut penyejuk mata */
-  --warna-latar-sub: #e2eaf4;      /* Latar sekunder */
-  --warna-kartu: #ffffff;          /* Putih bersih elegan */
-  --warna-kartu-atas: #f8fafc;     /* Latar header/baris kartu */
-  --warna-kartu-hover: #eff6ff;    /* Highlight biru muda saat disentuh/diarahkan */
-  --warna-batas: #cbd5e1;          /* Border tegas terlihat jelas */
-  --warna-batas-terang: #94a3b8;   /* Border kontras tinggi */
-  --warna-batas-fokus: #2563eb;    /* Border saat input aktif */
+  /* Latar Belakang & Panel: Bersih, Netral, Tidak Silau & Fokus */
+  --warna-latar: #f8fafc;          /* Canvas netral slate halus */
+  --warna-latar-sub: #f1f5f9;      /* Background sekunder */
+  --warna-kartu: #ffffff;          /* Surface putih bersih */
+  --warna-kartu-atas: #f8fafc;     /* Header tabel / baris */
+  --warna-kartu-hover: #f1f5f9;    /* Hover halus */
+  --warna-batas: #e2e8f0;          /* Border halus minimalis */
+  --warna-batas-terang: #cbd5e1;   /* Border kontras sedang */
+  --warna-batas-fokus: #0f172a;    /* Fokus input tegas */
   
-  /* Keterbacaan Teks Maksimal (Navy Gelap & Slate - Kontras Tinggi, Huruf Sangat Mudah Dibaca) */
-  --warna-teks-utama: #0f172a;     /* Navy pekat - sangat jelas dan tajam */
-  --warna-teks-redup: #334155;     /* Slate gelap untuk teks sekunder */
-  --warna-teks-pudar: #64748b;     /* Label pendukung */
+  /* Tipografi Berkelas & Kontras Tinggi */
+  --warna-teks-utama: #0f172a;     /* Slate gelap pekat - tajam & mudah dibaca */
+  --warna-teks-redup: #475569;     /* Slate menengah untuk deskripsi */
+  --warna-teks-pudar: #94a3b8;     /* Label pendukung */
 
-  /* Fitur Colorfull & Intuitif (Setiap Tombol Fungsi Memiliki Warna Khasnya Sendiri) */
-  --warna-primer: #1d4ed8;         /* Biru Laut Dalam - Tombol Aksi Utama */
-  --warna-primer-hover: #1e40af;
-  --warna-primer-soft: #eff6ff;
-  --warna-primer-border: #bfdbfe;
+  /* Warna Aksi Fungsional (Solid & Profesional, Bukan Gradien Silau) */
+  --warna-primer: #0f172a;         /* Slate Hitam Elegan (Khas Square / Shopify POS) */
+  --warna-primer-hover: #1e293b;
+  --warna-primer-soft: #f1f5f9;
+  --warna-primer-border: #cbd5e1;
 
-  --warna-sukses: #059669;         /* Hijau Zamrud - Tombol Bayar / Selesai / Uang */
+  --warna-aksen: #2563eb;          /* Biru Profesional untuk Status / Highlight */
+  --warna-aksen-hover: #1d4ed8;
+  --warna-aksen-soft: #eff6ff;
+  --warna-aksen-border: #bfdbfe;
+
+  --warna-sukses: #059669;         /* Hijau Zamrud - Kas / Bayar / Sukses */
   --warna-sukses-hover: #047857;
   --warna-sukses-soft: #ecfdf5;
   --warna-sukses-border: #a7f3d0;
 
-  --warna-peringatan: #d97706;     /* Oranye Amber - Diskon / Perhatian */
+  --warna-peringatan: #d97706;     /* Amber Tenang - Peringatan / Diskon */
   --warna-peringatan-soft: #fffbeb;
   --warna-peringatan-border: #fde68a;
 
-  --warna-bahaya: #dc2626;         /* Merah Tegas - Batal / Hapus / Void */
+  --warna-bahaya: #dc2626;         /* Merah Bersih - Hapus / Void / Batal */
   --warna-bahaya-hover: #b91c1c;
   --warna-bahaya-soft: #fef2f2;
   --warna-bahaya-border: #fecaca;
 
-  --warna-info: #0284c7;           /* Biru Terang - QRIS & Info */
-  --warna-info-soft: #f0f9ff;
-  --warna-info-border: #bae6fd;
-
-  --warna-ungu: #7c3aed;           /* Ungu - Transfer & Retur */
-  --warna-ungu-soft: #f5f3ff;
-  --warna-ungu-border: #ddd6fe;
-
-  /* Kode Warna Pecahan Uang Rupiah Asli (Sangat Membantu Kasir Usia 40-an Menghitung) */
-  --uang-100rb: #be123c;           /* Merah khas Rp 100.000 */
-  --uang-50rb: #0369a1;            /* Biru khas Rp 50.000 */
-  --uang-20rb: #15803d;            /* Hijau khas Rp 20.000 */
-  --uang-10rb: #7e22ce;            /* Ungu khas Rp 10.000 */
-  --uang-5rb: #b45309;             /* Coklat khas Rp 5.000 */
-  --uang-pas: #059669;             /* Hijau Ceria [UANG PAS] */
-
-  --font-utama: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-utama: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-angka: 'JetBrains Mono', monospace;
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
-  --bayangan-kartu: 0 4px 18px -2px rgba(30, 64, 175, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
-  --bayangan-tombol: 0 3px 10px rgba(0, 0, 0, 0.12);
-  --transisi-halus: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --bayangan-kartu: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
+  --bayangan-tombol: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --transisi-halus: all 0.15s ease-in-out;
 }
 
 * {
@@ -79,106 +68,96 @@ body {
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   overflow-x: hidden;
-  font-size: 15px;
+  font-size: 14px;
 }
 
-/* Scrollbar Elegan & Nyaman */
+/* Scrollbar Bersih & Ramping */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: var(--warna-latar);
 }
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
-/* Tombol Berukuran Besar & Ramah Sentuh (Touch-Friendly untuk Usia 40-an) */
+/* Tombol Minimalis & Profesional */
 .tombol {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 12px 20px;
-  font-size: 1rem;
-  font-weight: 700;
+  gap: 8px;
+  padding: 10px 18px;
+  font-size: 0.925rem;
+  font-weight: 600;
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   cursor: pointer;
   transition: var(--transisi-halus);
   font-family: var(--font-utama);
   user-select: none;
-  box-shadow: var(--bayangan-tombol);
 }
 .tombol:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
 }
 .tombol:disabled {
-  opacity: 0.55;
+  opacity: 0.5;
   cursor: not-allowed;
   transform: none;
-  box-shadow: none;
 }
 
-/* Tombol Aksi Warna-Warni Berkarakter */
+/* Variasi Tombol Solid */
 .tombol-primer {
-  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  background: #0f172a;
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
 }
 .tombol-primer:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1e40af, #1d4ed8);
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
+  background: #1e293b;
 }
 
 .tombol-sukses {
-  background: linear-gradient(135deg, #059669, #10b981);
+  background: #059669;
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
 }
 .tombol-sukses:hover:not(:disabled) {
-  background: linear-gradient(135deg, #047857, #059669);
-  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
+  background: #047857;
 }
 
 .tombol-bahaya {
-  background: linear-gradient(135deg, #dc2626, #ef4444);
+  background: #dc2626;
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
 }
 .tombol-bahaya:hover:not(:disabled) {
-  background: linear-gradient(135deg, #b91c1c, #dc2626);
+  background: #b91c1c;
 }
 
 .tombol-peringatan {
-  background: linear-gradient(135deg, #d97706, #f59e0b);
+  background: #d97706;
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
 }
 .tombol-peringatan:hover:not(:disabled) {
-  background: linear-gradient(135deg, #b45309, #d97706);
+  background: #b45309;
 }
 
 .tombol-sekunder {
   background: #ffffff;
-  border-color: #cbd5e1;
+  border: 1px solid var(--warna-batas);
   color: var(--warna-teks-utama);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 .tombol-sekunder:hover:not(:disabled) {
-  background: #f1f5f9;
-  border-color: #94a3b8;
-  color: #1e40af;
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
 .tombol-sm {
-  padding: 8px 14px;
-  font-size: 0.875rem;
+  padding: 6px 12px;
+  font-size: 0.825rem;
   border-radius: var(--radius-sm);
 }
 .tombol-lg {
@@ -188,14 +167,14 @@ body {
   font-weight: 800;
 }
 
-/* Input Form Jelas & Berkontras Tinggi */
+/* Input Form Bersih & Minimalis */
 .input-teks, .input-pilihan {
   width: 100%;
-  padding: 12px 16px;
-  font-size: 1.05rem;
-  font-weight: 600;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  font-weight: 500;
   border-radius: var(--radius-md);
-  border: 2px solid #cbd5e1;
+  border: 1px solid var(--warna-batas);
   background: #ffffff;
   color: var(--warna-teks-utama);
   font-family: var(--font-utama);
@@ -203,21 +182,21 @@ body {
   outline: none;
 }
 .input-teks::placeholder {
-  color: #94a3b8;
-  font-weight: 500;
+  color: var(--warna-teks-pudar);
+  font-weight: 400;
 }
 .input-teks:focus, .input-pilihan:focus {
-  border-color: #2563eb;
+  border-color: #0f172a;
   background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
 }
 
-/* Panel & Kartu Putih Elegan */
+/* Panel & Kartu Minimalis */
 .panel-kartu {
   background: var(--warna-kartu);
   border: 1px solid var(--warna-batas);
   border-radius: var(--radius-lg);
-  padding: 24px;
+  padding: 20px;
   box-shadow: var(--bayangan-kartu);
 }
 
@@ -225,32 +204,31 @@ body {
 .lencana {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 5px 12px;
+  gap: 6px;
+  padding: 3px 10px;
   border-radius: 9999px;
-  font-size: 0.825rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
+  font-size: 0.775rem;
+  font-weight: 600;
 }
 .lencana-online {
   background: #ecfdf5;
   color: #065f46;
-  border: 1.5px solid #10b981;
+  border: 1px solid #a7f3d0;
 }
 .lencana-offline {
   background: #fef2f2;
   color: #991b1b;
-  border: 1.5px solid #ef4444;
+  border: 1px solid #fecaca;
 }
 .lencana-peringatan {
   background: #fffbeb;
   color: #92400e;
-  border: 1.5px solid #f59e0b;
+  border: 1px solid #fde68a;
 }
 .lencana-info {
   background: #eff6ff;
   color: #1e40af;
-  border: 1.5px solid #3b82f6;
+  border: 1px solid #bfdbfe;
 }
 
 /* Modal Overlay & Kotak Dialog */

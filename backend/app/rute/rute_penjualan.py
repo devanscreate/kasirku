@@ -149,7 +149,7 @@ async def simpan_transaksi_penjualan(
     if ada_harga_berbeda:
         flags["price_mismatch"] = True
 
-    total_hitung = subtotal_hitung - permintaan.diskon + permintaan.pajak + permintaan.pembulatan
+    total_hitung = subtotal_hitung - permintaan.diskon + permintaan.pajak + permintaan.pembulatan - (permintaan.potongan_donasi or 0)
     if abs(total_hitung - permintaan.total) > 1: # toleransi pembulatan rupiah
         flags["total_mismatch"] = {
             "total_klien": permintaan.total,

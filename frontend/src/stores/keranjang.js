@@ -132,7 +132,7 @@ export const useKeranjangStore = defineStore('keranjang', () => {
   }
 
   // F-04: Selesaikan Transaksi Pembayaran dan Simpan ke Outbox secara Atomik
-  async function selesaikanTransaksi({ idShift, idKasir, namaKasir, metodeBayar, jumlahDiterima }) {
+  async function selesaikanTransaksi({ idShift, idKasir, namaKasir, metodeBayar, jumlahDiterima, potonganDonasi = null }) {
     if (itemKeranjang.value.length === 0) {
       throw new Error('Keranjang belanja masih kosong')
     }
@@ -140,8 +140,16 @@ export const useKeranjangStore = defineStore('keranjang', () => {
     const idTransaksi = crypto.randomUUID()
     const nomorStruk = await buatNomorStrukLokal()
     const waktuTransaksi = new Date().toISOString()
-    const diterima = parseInt(jumlahDiterima, 10) || totalAkhir.value
-    const kembalian = Math.max(0, diterima - totalAkhir.value)
+    const nominalPotonganDonasi = potonganDonasi ? (Number(potonganDonasi.nominal) || 0) : 0
+    const totalTagihanAkhir = Math.max(0, totalAkhir.value - nominalPotonganDonasi)
+    const isLunasTabungan = totalTagihanAkhir === 0 && nominalPotonganDonasi > 0
+    const metodeFinal = isLunasTabungan ? 'tabungan' : (metodeBayar || 'tunai')
+    const diterima = isLunasTabungan
+      ? 0
+      : ((jumlahDiterima !== undefined && jumlahDiterima !== null && !isNaN(Number(jumlahDiterima))) 
+          ? Number(jumlahDiterima) 
+          : totalTagihanAkhir)
+    const kembalian = isLunasTabungan ? 0 : Math.max(0, diterima - totalTagihanAkhir)
 
     // Alokasi diskon transaksi per item secara proporsional
     const totalSub = subtotal.value
@@ -168,13 +176,15 @@ export const useKeranjangStore = defineStore('keranjang', () => {
       diskon: nilaiDiskon.value,
       pajak: nilaiPajak.value,
       pembulatan: pembulatan.value,
-      total: totalAkhir.value,
+      potongan_donasi: nominalPotonganDonasi,
+      total_sebelum_potongan: totalAkhir.value,
+      total: totalTagihanAkhir,
       waktu_transaksi: waktuTransaksi,
       item: itemsFormatted,
       pembayaran: [
         {
-          metode: metodeBayar,
-          jumlah: totalAkhir.value,
+          metode: metodeFinal,
+          jumlah: totalTagihanAkhir,
           diterima: diterima,
           kembalian: kembalian
         }
@@ -186,6 +196,7 @@ export const useKeranjangStore = defineStore('keranjang', () => {
       ...payloadPenjualan,
       id_kasir: idKasir,
       nama_kasir: namaKasir,
+      potonganDonasi: potonganDonasi || null,
       status_sinkron: 'pending_sync',
       status: 'completed',
       dibuat_pada: waktuTransaksi

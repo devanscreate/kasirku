@@ -19,6 +19,13 @@ const ambangSelisih = 50000 // Ambang selisih wajib catatan (F-09)
 
 const formatRupiah = (val) => 'Rp ' + Number(val || 0).toLocaleString('id-ID')
 
+function tanganiInputKasFisik(e) {
+  const digitOnly = e.target.value.replace(/\D/g, '')
+  const num = digitOnly ? parseInt(digitOnly, 10) : 0
+  kasFisik.value = num
+  e.target.value = num > 0 ? num.toLocaleString('id-ID') : ''
+}
+
 onMounted(async () => {
   if (!shiftStore.shiftAktif) return
   try {
@@ -65,17 +72,12 @@ async function konfirmasiTutupShift() {
   <div class="latar-modal">
     <div class="kotak-modal p-6">
       <div class="header-modal">
-        <div class="flex items-center gap-3">
-          <div class="ikon-tutup-shift">
-            <Lock :size="24" />
-          </div>
-          <div>
-            <h2 class="judul-modal">Tutup Shift Kasir</h2>
-            <p class="sub-modal">Hitung uang fisik di laci kasir dan lakukan rekonsiliasi kas.</p>
-          </div>
+        <div>
+          <h2 class="judul-modal">Tutup Shift Kasir</h2>
+          <p class="sub-modal">Hitung uang fisik di laci kasir dan lakukan rekonsiliasi kas.</p>
         </div>
         <button class="tombol-tutup" @click="emit('tutup')" title="Tutup Dialog">
-          <X :size="22" />
+          <X :size="20" />
         </button>
       </div>
 
@@ -117,13 +119,14 @@ async function konfirmasiTutupShift() {
         <div class="input-wrap-besar">
           <span class="awalan-rp">Rp</span>
           <input 
-            v-model.number="kasFisik"
-            type="number"
-            min="0"
-            step="1000"
+            :value="kasFisik > 0 ? Number(kasFisik).toLocaleString('id-ID') : ''"
+            type="text"
+            inputmode="numeric"
             class="input-teks input-uang-besar"
             placeholder="0"
             autofocus
+            @focus="$event.target.select()"
+            @input="tanganiInputKasFisik"
           />
         </div>
       </div>
@@ -133,7 +136,7 @@ async function konfirmasiTutupShift() {
         <div class="flex-between">
           <span class="tebal">Status Selisih Kas Fisik:</span>
           <span class="angka-selisih tebal">
-            {{ selisihKas === 0 ? '✅ Sesuai / Uang Pas (Rp 0)' : (selisihKas > 0 ? `⚠️ Uang Lebih ${formatRupiah(selisihKas)}` : `❌ Uang Kurang ${formatRupiah(Math.abs(selisihKas))}`) }}
+            {{ selisihKas === 0 ? 'Sesuai / Pas (Rp 0)' : (selisihKas > 0 ? `Lebih ${formatRupiah(selisihKas)}` : `Kurang ${formatRupiah(Math.abs(selisihKas))}`) }}
           </span>
         </div>
       </div>
@@ -249,20 +252,21 @@ async function konfirmasiTutupShift() {
 .awalan-rp {
   position: absolute;
   left: 18px;
-  font-size: 1.3rem;
-  font-weight: 900;
-  color: #2563eb;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #64748b;
   font-family: var(--font-angka);
 }
 .input-uang-besar {
   padding-left: 56px;
   font-size: 1.5rem;
-  font-weight: 900;
-  height: 56px;
+  font-weight: 800;
+  height: 54px;
   font-family: var(--font-angka);
   color: #0f172a;
-  border: 2px solid #2563eb;
+  border: 1.5px solid #0f172a;
   background: #ffffff;
+  border-radius: var(--radius-md);
 }
 
 .info-selisih {

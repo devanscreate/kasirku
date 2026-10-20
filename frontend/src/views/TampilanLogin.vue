@@ -102,18 +102,18 @@ function isiCepat(peran) {
         </button>
       </form>
 
-      <!-- Akses Demo Cepat Berwarna Menarik -->
+      <!-- Akses Demo Cepat -->
       <div class="akses-demo">
-        <div class="label-demo">Klik 1 Tombol untuk Isi Akun Demo:</div>
+        <div class="label-demo">Akses Cepat Akun Demo:</div>
         <div class="tombol-demo-wrap">
           <button type="button" class="tombol-demo demo-kasir" @click="isiCepat('kasir')" title="Login sebagai Kasir">
-            👤 Kasir
+            Kasir
           </button>
           <button type="button" class="tombol-demo demo-manajer" @click="isiCepat('manajer')" title="Login sebagai Manajer">
-            💼 Manajer
+            Manajer
           </button>
           <button type="button" class="tombol-demo demo-owner" @click="isiCepat('owner')" title="Login sebagai Pemilik Toko">
-            👑 Pemilik (Owner)
+            Owner
           </button>
         </div>
       </div>
@@ -128,66 +128,65 @@ function isiCepat(peran) {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: linear-gradient(135deg, #e0e7ff 0%, #f0f4f9 50%, #dbeafe 100%);
+  background: #f8fafc;
 }
 .kotak-login {
   width: 100%;
-  max-width: 460px;
-  padding: 42px 36px;
+  max-width: 440px;
+  padding: 36px 32px;
   background: #ffffff;
-  border-radius: var(--radius-xl);
-  border: 2px solid #bfdbfe;
-  box-shadow: 0 12px 36px rgba(30, 64, 175, 0.12);
+  border-radius: var(--radius-lg);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
 }
 .logo-header {
   text-align: center;
   margin-bottom: 28px;
 }
 .ikon-logo {
-  width: 72px;
-  height: 72px;
-  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  width: 56px;
+  height: 56px;
+  background: #0f172a;
   color: white;
-  border-radius: 20px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 16px auto;
-  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
+  margin: 0 auto 14px auto;
 }
 .judul-aplikasi {
-  font-size: 1.8rem;
-  font-weight: 900;
+  font-size: 1.6rem;
+  font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.02em;
 }
 .tagline {
-  font-size: 0.95rem;
-  color: #475569;
-  font-weight: 600;
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
   margin-top: 4px;
 }
 .peringatan-error {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   background: #fef2f2;
-  border: 2px solid #fecaca;
+  border: 1px solid #fecaca;
   color: #b91c1c;
-  padding: 12px 16px;
+  padding: 10px 14px;
   border-radius: var(--radius-md);
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 600;
   margin-bottom: 20px;
 }
 .grup-form {
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 .label-form {
   display: block;
-  font-size: 0.95rem;
-  font-weight: 800;
-  margin-bottom: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: 6px;
   color: #0f172a;
 }
 .input-ikon-wrap {
@@ -197,20 +196,21 @@ function isiCepat(peran) {
 }
 .ikon-input {
   position: absolute;
-  left: 16px;
-  color: #2563eb;
+  left: 14px;
+  color: #64748b;
 }
 .input-dengan-ikon {
-  padding-left: 48px;
-  height: 52px;
-  font-size: 1.05rem;
-  font-weight: 600;
-  border: 2px solid #cbd5e1;
-  background: #f8fafc;
+  padding-left: 44px;
+  height: 46px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  border-radius: var(--radius-md);
 }
 .input-dengan-ikon:focus {
   background: #ffffff;
-  border-color: #2563eb;
+  border-color: #0f172a;
 }
 .w-full {
   width: 100%;
@@ -219,23 +219,23 @@ function isiCepat(peran) {
   margin-top: 16px;
 }
 .tombol-masuk {
-  height: 56px;
-  font-size: 1.15rem;
-  font-weight: 900;
-  letter-spacing: 0.02em;
+  height: 48px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: var(--radius-md);
 }
 
 .akses-demo {
-  margin-top: 28px;
-  padding-top: 22px;
-  border-top: 2px dashed #cbd5e1;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px dashed #e2e8f0;
   text-align: center;
 }
 .label-demo {
-  font-size: 0.85rem;
-  color: #475569;
-  font-weight: 800;
-  margin-bottom: 12px;
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 600;
+  margin-bottom: 10px;
 }
 .tombol-demo-wrap {
   display: grid;
@@ -243,32 +243,23 @@ function isiCepat(peran) {
   gap: 8px;
 }
 .tombol-demo {
-  padding: 10px 8px;
-  border-radius: 10px;
-  font-size: 0.875rem;
-  font-weight: 800;
+  padding: 8px 6px;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border: 2px solid;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+  transition: all 0.15s ease;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #0f172a;
 }
 .tombol-demo:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+  background: #ffffff;
+  border-color: #0f172a;
 }
-.demo-kasir {
-  background: #eff6ff;
-  color: #1d4ed8;
-  border-color: #bfdbfe;
-}
-.demo-manajer {
-  background: #f5f3ff;
-  color: #7c3aed;
-  border-color: #ddd6fe;
-}
-.demo-owner {
-  background: #fffbeb;
-  color: #b45309;
-  border-color: #fde68a;
+.demo-kasir, .demo-manajer, .demo-owner {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
 }
 </style>

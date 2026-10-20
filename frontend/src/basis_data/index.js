@@ -24,6 +24,12 @@ dbLokal.version(1).stores({
   pengaturan_lokal: 'kunci'
 })
 
+dbLokal.version(2).stores({
+  // Tabungan donasi kembalian pelanggan lokal & offline
+  tabungan_donasi: 'id, nomor_hp, tipe, nomor_struk, dibuat_pada',
+  pelanggan_donasi: 'nomor_hp, nama, saldo, terakhir_donasi'
+})
+
 /**
  * Helper untuk mengambil atau menginisialisasi kode unik perangkat kasir (mis. KSR01)
  */

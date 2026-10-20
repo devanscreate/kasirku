@@ -11,7 +11,7 @@ class InputItemPenjualan(BaseModel):
     subtotal_baris: int = Field(..., ge=0)
 
 class InputPembayaran(BaseModel):
-    metode: str = Field(..., pattern="^(tunai|qris|transfer)$")
+    metode: str = Field(..., pattern="^(tunai|qris|transfer|tabungan)$")
     jumlah: int = Field(..., ge=0)
     diterima: int = Field(..., ge=0)
     kembalian: int = Field(0, ge=0)
@@ -24,6 +24,8 @@ class InputPenjualan(BaseModel):
     diskon: int = Field(0, ge=0)
     pajak: int = Field(0, ge=0)
     pembulatan: int = Field(0)
+    potongan_donasi: Optional[int] = Field(0, ge=0)
+    total_sebelum_potongan: Optional[int] = Field(None, ge=0)
     total: int = Field(..., ge=0)
     waktu_transaksi: datetime
     item: List[InputItemPenjualan] = Field(..., min_length=1)

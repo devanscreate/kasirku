@@ -225,3 +225,25 @@ class ModelCatatanAudit(BasisTabel):
     id_entitas = Column(String(36), nullable=True)
     rincian = Column(Text, nullable=True)
     dibuat_pada = Column(DateTime(timezone=True), default=waktu_sekarang_utc)
+
+# 14. Tabel Tabungan & Donasi Kembalian Pelanggan
+class ModelTabunganDonasi(BasisTabel):
+    __tablename__ = "tabungan_donasi"
+
+    id = Column(String(36), primary_key=True, default=buat_uuid)
+    id_toko = Column(String(36), ForeignKey("toko.id"), nullable=False, index=True)
+    nomor_hp = Column(String(30), nullable=False, index=True) # Identifikasi nomor HP pembeli
+    nama_pelanggan = Column(String(150), nullable=True)
+    tipe = Column(String(30), nullable=False) # setor_kembalian, cair_tunai, potong_belanja
+    nominal = Column(BigInteger, nullable=False) # Nilai rupiah nominal donasi/pencairan
+    id_penjualan = Column(String(36), ForeignKey("penjualan.id"), nullable=True, index=True)
+    nomor_struk = Column(String(100), nullable=True)
+    id_shift = Column(String(36), ForeignKey("shift_kasir.id"), nullable=True, index=True)
+    id_kasir = Column(String(36), ForeignKey("pengguna.id"), nullable=True)
+    catatan = Column(Text, nullable=True)
+    dibuat_pada = Column(DateTime(timezone=True), default=waktu_sekarang_utc, index=True)
+
+    __table_args__ = (
+        Index("idx_donasi_toko_hp", "id_toko", "nomor_hp"),
+        Index("idx_donasi_toko_waktu", "id_toko", "dibuat_pada"),
+    )

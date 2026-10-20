@@ -147,25 +147,22 @@ function padaGantiProdukOpname() {
       <!-- Header Halaman -->
       <div class="header-stok">
         <div class="header-info">
-          <div class="ikon-header">
-            <Boxes :size="26" />
-          </div>
           <div>
-            <h1 class="judul-halaman">Manajemen Operasional Stok</h1>
-            <p class="sub-halaman">Penerimaan pasokan barang baru dari distributor, penyesuaian delta barang rusak/hilang, dan audit fisik opname.</p>
+            <h1 class="judul-halaman">Manajemen Stok</h1>
+            <p class="sub-halaman">Penerimaan pasokan barang baru, penyesuaian barang rusak/hilang, dan stock opname fisik.</p>
           </div>
         </div>
       </div>
 
-      <!-- Tab Navigasi Stok (Berwarna-warni dan Jelas untuk Usia 40 Tahun) -->
+      <!-- Tab Navigasi Stok -->
       <div class="tab-stok mt-4">
         <button 
           class="btn-tab tab-terima" 
           :class="{ 'aktif': tabAktif === 'terima' }" 
           @click="tabAktif = 'terima'"
         >
-          <ArrowDownToLine :size="18" />
-          <span>1. Terima Barang (Masuk)</span>
+          <ArrowDownToLine :size="15" />
+          <span>Terima Barang</span>
         </button>
 
         <button 
@@ -173,8 +170,8 @@ function padaGantiProdukOpname() {
           :class="{ 'aktif': tabAktif === 'sesuaikan' }" 
           @click="tabAktif = 'sesuaikan'"
         >
-          <Sliders :size="18" />
-          <span>2. Penyesuaian Stok (Koreksi)</span>
+          <Sliders :size="15" />
+          <span>Penyesuaian Stok</span>
         </button>
 
         <button 
@@ -182,8 +179,8 @@ function padaGantiProdukOpname() {
           :class="{ 'aktif': tabAktif === 'opname' }" 
           @click="tabAktif = 'opname'"
         >
-          <ClipboardCheck :size="18" />
-          <span>3. Stock Opname (Fisik)</span>
+          <ClipboardCheck :size="15" />
+          <span>Stock Opname</span>
         </button>
 
         <button 
@@ -191,21 +188,21 @@ function padaGantiProdukOpname() {
           :class="{ 'aktif': tabAktif === 'riwayat' }" 
           @click="tabAktif = 'riwayat'"
         >
-          <History :size="18" />
-          <span>4. Buku Besar Riwayat Mutasi</span>
+          <History :size="15" />
+          <span>Riwayat Mutasi</span>
         </button>
       </div>
 
       <!-- Pesan Notifikasi -->
       <div v-if="pesanSukses" class="pesan-sukses-box mt-3">
-        ✅ {{ pesanSukses }}
+        {{ pesanSukses }}
       </div>
       <div v-if="pesanError" class="peringatan-error mt-3">{{ pesanError }}</div>
 
       <!-- TAB 1: TERIMA BARANG -->
       <div v-if="tabAktif === 'terima'" class="konten-tab mt-4">
         <div class="panduan-tab-box panduan-hijau">
-          📥 <b>Penerimaan Barang:</b> Gunakan formulir ini saat ada kiriman pasokan barang datang dari supplier. Stok barang di toko akan otomatis bertambah.
+          <b>Penerimaan Barang:</b> Catat barang yang masuk dari distributor/supplier untuk menambah stok toko.
         </div>
 
         <form @submit.prevent="kirimTerima" class="form-stok mt-4">
@@ -244,7 +241,7 @@ function padaGantiProdukOpname() {
       <!-- TAB 2: PENYESUAIAN STOK -->
       <div v-if="tabAktif === 'sesuaikan'" class="konten-tab mt-4">
         <div class="panduan-tab-box panduan-oranye">
-          ⚖️ <b>Penyesuaian Stok:</b> Gunakan untuk mengoreksi selisih stok jika ada barang yang bocor, rusak, kadaluarsa, atau hilang.
+          <b>Penyesuaian Stok:</b> Gunakan formulir ini untuk mengoreksi selisih stok jika ada barang yang rusak, kadaluarsa, atau hilang.
         </div>
 
         <form @submit.prevent="kirimSesuaikan" class="form-stok mt-4">
@@ -362,7 +359,7 @@ function padaGantiProdukOpname() {
                 </td>
                 <td class="teks-alasan">{{ m.alasan || '-' }}</td>
                 <td>
-                  <span class="badge-pic">👤 {{ m.dibuat_oleh || 'Sistem' }}</span>
+                  <span class="badge-pic">{{ m.dibuat_oleh || 'Sistem' }}</span>
                 </td>
               </tr>
               <tr v-if="riwayatPergerakan.length === 0">

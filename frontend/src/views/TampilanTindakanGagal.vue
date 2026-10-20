@@ -33,14 +33,9 @@ async function buangEvent(id) {
   <div class="halaman-tindakan">
     <div class="panel-kartu">
       <div class="header-halaman">
-        <div class="flex items-center gap-4">
-          <div class="ikon-header-peringatan">
-            <AlertTriangle :size="28" />
-          </div>
-          <div>
-            <h1 class="judul-halaman">Daftar Perlu Tindakan (Event Outbox Gagal)</h1>
-            <p class="sub-halaman">Daftar transaksi lokal yang ditolak oleh cloud server (Error 422) karena format data tidak sesuai atau bentrok integritas.</p>
-          </div>
+        <div>
+          <h1 class="judul-halaman">Daftar Perlu Tindakan (Event Outbox Gagal)</h1>
+          <p class="sub-halaman">Daftar transaksi lokal yang ditolak oleh cloud server (Error 422) karena format data tidak sesuai atau bentrok integritas.</p>
         </div>
       </div>
 
@@ -58,7 +53,7 @@ async function buangEvent(id) {
               <span class="tebal teks-id-event font-angka">ID Event: {{ item.id }}</span>
             </div>
             <div class="pesan-error-teks mt-2">
-              ⚠️ <b>Penyebab Penolakan Server:</b> {{ item.pesan_kesalahan || 'Validasi skema data gagal' }}
+              <b>Penyebab Penolakan Server:</b> {{ item.pesan_kesalahan || 'Validasi skema data gagal' }}
             </div>
             <div class="teks-waktu-gagal mt-1">
               Dibuat pada: {{ new Date(item.dibuat_pada).toLocaleString('id-ID') }} | Percobaan Sinkron: {{ item.percobaan }}x

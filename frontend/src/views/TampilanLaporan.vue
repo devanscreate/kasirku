@@ -62,65 +62,62 @@ function unduhCSV(tipe) {
       <!-- Header Laporan -->
       <div class="header-laporan">
         <div class="header-info">
-          <div class="ikon-header">
-            <BarChart3 :size="26" />
-          </div>
           <div>
             <h1 class="judul-halaman">Laporan Bisnis & Analitik Penjualan</h1>
-            <p class="sub-halaman">Ringkasan pendapatan omzet bersih toko, performa kasir, produk terlaris, dan audit anomali.</p>
+            <p class="sub-halaman">Ringkasan pendapatan omzet toko, performa kasir, produk terlaris, dan audit transaksi.</p>
           </div>
         </div>
         <div class="flex gap-3">
           <button class="tombol-ekspor" @click="unduhCSV('penjualan')">
-            <Download :size="16" />
-            <span>Ekspor File CSV</span>
+            <Download :size="15" />
+            <span>Ekspor CSV</span>
           </button>
           <button class="tombol-perbarui" @click="muatLaporan" :disabled="sedangMemuat">
-            <span>{{ sedangMemuat ? 'Memuat Data...' : 'Perbarui Laporan' }}</span>
+            <span>{{ sedangMemuat ? 'Memuat Data...' : 'Perbarui' }}</span>
           </button>
         </div>
       </div>
 
-      <!-- KPI KARTU RINGKASAN (Colorful, Visual Cues Sangat Jelas untuk 40th) -->
+      <!-- KPI KARTU RINGKASAN MINIMALIS -->
       <div v-if="ringkasan" class="grid-kpi mt-5">
-        <!-- KPI 1: OMZET BERSIH (Hijau Uang) -->
+        <!-- KPI 1: OMZET BERSIH -->
         <div class="kartu-kpi kpi-hijau">
           <div class="kpi-atas">
-            <span class="kpi-label teks-kpi-hijau">💵 OMZET BERSIH TOKO</span>
+            <span class="kpi-label teks-kpi-hijau">Omzet Bersih</span>
             <span class="kpi-tag tag-hijau">Bersih</span>
           </div>
           <div class="kpi-nilai font-angka teks-nilai-hijau">{{ formatRupiah(ringkasan.omzet_bersih) }}</div>
-          <div class="kpi-sub">Total Omzet Kotor dikurangi Refund Retur</div>
+          <div class="kpi-sub">Total omzet kotor dikurangi refund retur</div>
         </div>
 
-        <!-- KPI 2: OMZET KOTOR (Biru Utama) -->
+        <!-- KPI 2: OMZET KOTOR -->
         <div class="kartu-kpi kpi-biru">
           <div class="kpi-atas">
-            <span class="kpi-label teks-kpi-biru">📦 OMZET KOTOR PENJUALAN</span>
+            <span class="kpi-label teks-kpi-biru">Omzet Kotor</span>
             <span class="kpi-tag tag-biru">{{ ringkasan.total_transaksi_berhasil }} Struk</span>
           </div>
           <div class="kpi-nilai font-angka teks-nilai-biru">{{ formatRupiah(ringkasan.total_omzet_kotor) }}</div>
-          <div class="kpi-sub">Total seluruh transaksi sebelum refund</div>
+          <div class="kpi-sub">Total transaksi sebelum refund</div>
         </div>
 
-        <!-- KPI 3: TOTAL DISKON (Oranye) -->
+        <!-- KPI 3: TOTAL DISKON -->
         <div class="kartu-kpi kpi-oranye">
           <div class="kpi-atas">
-            <span class="kpi-label teks-kpi-oranye">🏷️ POTONGAN DISKON</span>
+            <span class="kpi-label teks-kpi-oranye">Potongan Diskon</span>
             <span class="kpi-tag tag-oranye">Promo</span>
           </div>
           <div class="kpi-nilai font-angka teks-nilai-oranye">{{ formatRupiah(ringkasan.total_diskon) }}</div>
-          <div class="kpi-sub">Total diskon kasir & promosi diberikan</div>
+          <div class="kpi-sub">Total potongan diskon penjualan</div>
         </div>
 
-        <!-- KPI 4: TOTAL REFUND (Merah) -->
+        <!-- KPI 4: TOTAL REFUND -->
         <div class="kartu-kpi kpi-merah">
           <div class="kpi-atas">
-            <span class="kpi-label teks-kpi-merah">🔄 PENGEMBALIAN (REFUND)</span>
+            <span class="kpi-label teks-kpi-merah">Pengembalian (Refund)</span>
             <span class="kpi-tag tag-merah">{{ ringkasan.total_transaksi_retur }} Retur</span>
           </div>
           <div class="kpi-nilai font-angka teks-nilai-merah">{{ formatRupiah(ringkasan.total_refund) }}</div>
-          <div class="kpi-sub">Uang kas keluar untuk pengembalian barang</div>
+          <div class="kpi-sub">Total uang kas keluar untuk retur</div>
         </div>
       </div>
 
@@ -129,7 +126,6 @@ function unduhCSV(tipe) {
         <!-- Metode Pembayaran -->
         <div class="kartu-bagian">
           <div class="header-bagian">
-            <div class="ikon-bagian ikon-biru"><CreditCard :size="18" /></div>
             <div>
               <h3 class="judul-bagian">Penjualan per Cara Bayar</h3>
               <p class="sub-bagian">Distribusi metode transaksi tunai, QRIS, & transfer</p>
@@ -147,7 +143,7 @@ function unduhCSV(tipe) {
               <tr v-for="m in metodeBayar" :key="m.metode" class="baris-tabel">
                 <td>
                   <span class="badge-metode" :class="m.metode.toLowerCase()">
-                    {{ m.metode === 'tunai' ? '💵 Tunai' : (m.metode === 'qris' ? '📱 QRIS' : '💳 ' + m.metode.toUpperCase()) }}
+                    {{ m.metode === 'tunai' ? 'Tunai' : (m.metode === 'qris' ? 'QRIS' : m.metode.toUpperCase()) }}
                   </span>
                 </td>
                 <td class="font-angka">{{ m.jumlah_transaksi }} Transaksi</td>
@@ -180,7 +176,7 @@ function unduhCSV(tipe) {
             <tbody>
               <tr v-for="k in performaKasir" :key="k.id_kasir" class="baris-tabel">
                 <td>
-                  <span class="badge-petugas">👤 {{ k.nama_kasir }}</span>
+                  <span class="badge-petugas">{{ k.nama_kasir }}</span>
                 </td>
                 <td class="font-angka">{{ k.total_transaksi }} Struk</td>
                 <td class="font-angka tebal teks-sukses text-right">{{ formatRupiah(k.total_omzet) }}</td>
@@ -253,11 +249,11 @@ function unduhCSV(tipe) {
           <tbody>
             <tr v-for="f in transaksiFlag" :key="f.id" class="baris-tabel">
               <td><span class="font-angka tebal teks-struk-flag">{{ f.nomor_struk }}</span></td>
-              <td>👤 {{ f.nama_kasir }}</td>
+              <td>{{ f.nama_kasir }}</td>
               <td class="teks-waktu">{{ new Date(f.waktu_transaksi).toLocaleString('id-ID') }}</td>
               <td>
                 <span v-for="(v, k) in f.flag" :key="k" class="badge-flag-bahaya mr-1">
-                  ⚠️ {{ k }}
+                  {{ k }}
                 </span>
               </td>
               <td class="font-angka tebal text-right">{{ formatRupiah(f.total) }}</td>
@@ -290,7 +286,7 @@ function unduhCSV(tipe) {
               <td><span class="font-angka teks-sku">{{ s.sku }}</span></td>
               <td><span class="tebal teks-nama-item">{{ s.nama_produk }}</span></td>
               <td><span class="badge-kategori">{{ s.kategori || 'Umum' }}</span></td>
-              <td><span class="badge-stok-habis font-angka">⚠️ {{ s.stok_sekarang }} Unit</span></td>
+              <td><span class="badge-stok-habis font-angka">{{ s.stok_sekarang }} Unit</span></td>
               <td class="font-angka">{{ s.min_stok }} Unit</td>
             </tr>
           </tbody>
